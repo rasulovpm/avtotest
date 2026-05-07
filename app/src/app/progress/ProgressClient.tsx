@@ -1,10 +1,12 @@
 "use client";
+import { useState } from "react";
 import { useLang } from "@/components/lang-provider";
 import { pickTitle } from "@/lib/i18n";
 import { relativeTime } from "@/lib/utils";
 import Link from "next/link";
 
 type HCell = { date: string; count: number; level: number };
+type Bar = { d: string; date: string; q: number; c: number; today?: boolean };
 
 type Props = {
   totalXp: number;
@@ -13,8 +15,9 @@ type Props = {
   avgScore: number;
   recentResults: { id: string; score: number; passed: boolean; titleUz: string; titleRu: string; titleCy: string; completedAt: string }[];
   categoryStats: { name: string; correct: number; total: number }[];
-  heatmap: HCell[][]; // [col][row]
-  weeklyChart: number[];
+  heatmap: HCell[][];
+  weekDays: Bar[];
+  monthDays: Bar[];
   today: string;
 };
 
@@ -24,15 +27,22 @@ const HEAT_OPS = [0.06, 0.22, 0.42, 0.65, 1];
 
 export default function ProgressClient(p: Props) {
   const { t, lang } = useLang();
+  const [range, setRange] = useState<"week" | "month">("week");
+
   const level = p.totalXp >= 1000 ? "PLATINA" : p.totalXp >= 500 ? "OLTIN" : p.totalXp >= 100 ? "KUMUSH" : "BRONZA";
   const nextLevel = level === "PLATINA" ? "DIAMOND" : level === "OLTIN" ? "PLATINA" : level === "KUMUSH" ? "OLTIN" : "KUMUSH";
   const levelMax = level === "PLATINA" ? 5000 : level === "OLTIN" ? 1000 : level === "KUMUSH" ? 500 : 100;
   const levelMin = level === "OLTIN" ? 500 : level === "KUMUSH" ? 100 : level === "BRONZA" ? 0 : 1000;
   const progressInLevel = ((p.totalXp - levelMin) / (levelMax - levelMin)) * 100;
 
-  const max = Math.max(1, ...p.weeklyChart);
+  const data = range === "week" ? p.weekDays : p.monthDays;
+  const max = Math.max(1, ...data.map((x) => x.q));
+  const total = data.reduce((s, x) => s + x.q, 0);
+  const totalCorrect = data.reduce((s, x) => s + x.c, 0);
+  const accuracy = total > 0 ? Math.round((totalCorrect / total) * 100) : 0;
+  const avg = Math.round(total / data.length);
 
-  // Month labels per col
+  // Month labels per col for heatmap
   const monthLabels: string[] = [];
   let lastMonth = -1;
   for (const col of p.heatmap) {
@@ -45,9 +55,6 @@ export default function ProgressClient(p: Props) {
     }
   }
 
-  const totalThisWeek = p.heatmap[p.heatmap.length - 1]?.reduce((a, b) => a + (b.level >= 0 ? b.count : 0), 0) || 0;
-  const totalAll = p.heatmap.reduce((a, col) => a + col.reduce((b, c) => b + (c.level >= 0 ? c.count : 0), 0), 0);
-
   return (
     <div style={{ padding: "48px", color: "var(--fg-0)" }}>
       <div style={{ marginBottom: 28 }}>
@@ -56,42 +63,120 @@ export default function ProgressClient(p: Props) {
       </div>
 
       <div className="lg-grid-3" style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr)", gap: 16, marginBottom: 16 }}>
-        {/* Chart */}
-        <div className="bento" style={{ padding: 28, height: 280 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-            <div className="overline">HAFTALIK NATIJALAR · 8 HAFTA</div>
-            <span className="chip">{p.weeklyChart.reduce((a, b) => a + b, 0)} javob</span>
+        {/* Bar chart */}
+        <div className="bento" style={{ padding: 28, height: 320, display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
+            <div>
+              <div className="overline" style={{ marginBottom: 4 }}>
+                {lang === "ru" ? "ЕЖЕДНЕВНАЯ АКТИВНОСТЬ" : "KUNDALIK AKTIVLIK"}
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+                <span className="h-display" style={{ fontSize: 28, fontWeight: 700 }}>{total}</span>
+                <span style={{ fontSize: 12, color: "var(--fg-2)" }}>
+                  {lang === "ru" ? "вопросов · точность" : "savol · aniqlik"}{" "}
+                  <span className="mono" style={{ color: "var(--success)" }}>{accuracy}%</span>
+                </span>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 0, padding: 3, borderRadius: 10, background: "var(--bg-2)", border: "1px solid var(--line)" }}>
+              {[
+                { k: "week" as const, l: lang === "ru" ? "1 неделя" : "1 hafta" },
+                { k: "month" as const, l: lang === "ru" ? "1 месяц" : "1 oy" }
+              ].map((r) => (
+                <button
+                  key={r.k}
+                  onClick={() => setRange(r.k)}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: 7,
+                    border: "none",
+                    cursor: "pointer",
+                    fontFamily: "var(--font-body)",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    background: range === r.k ? "var(--bg-0)" : "transparent",
+                    color: range === r.k ? "var(--fg-0)" : "var(--fg-2)",
+                    boxShadow: range === r.k ? "0 1px 2px rgba(0,0,0,0.4)" : "none",
+                    transition: "all .15s"
+                  }}
+                >
+                  {r.l}
+                </button>
+              ))}
+            </div>
           </div>
-          <svg width="100%" height="180" viewBox="0 0 600 180" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="ar" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="oklch(0.82 0.18 195 / 0.4)" />
-                <stop offset="100%" stopColor="oklch(0.82 0.18 195 / 0)" />
-              </linearGradient>
-            </defs>
-            {[40, 80, 120, 160].map((y, i) => (
-              <line key={i} x1="0" y1={y} x2="600" y2={y} stroke="var(--line)" strokeDasharray="2 4" />
-            ))}
-            {(() => {
-              const pts = p.weeklyChart.map((v, i) => `${(i / Math.max(1, p.weeklyChart.length - 1)) * 580 + 10},${170 - (v / max) * 150}`).join(" ");
-              const area = `M 10,170 L ${pts} L 590,170 Z`;
+
+          <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: range === "week" ? 12 : 4, paddingTop: 18, position: "relative" }}>
+            <div style={{ position: "absolute", inset: "18px 0 22px 0", display: "flex", flexDirection: "column", justifyContent: "space-between", pointerEvents: "none" }}>
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} style={{ borderTop: "1px dashed var(--line)", height: 0 }} />
+              ))}
+            </div>
+            {data.map((b, i) => {
+              const h = max > 0 ? (b.q / max) * 100 : 0;
+              const correctH = b.q > 0 ? (b.c / b.q) * 100 : 0;
               return (
-                <>
-                  <path d={area} fill="url(#ar)" />
-                  <polyline points={pts} fill="none" stroke="oklch(0.82 0.18 195)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  {p.weeklyChart.map((v, i) => (
-                    <circle
-                      key={i}
-                      cx={(i / Math.max(1, p.weeklyChart.length - 1)) * 580 + 10}
-                      cy={170 - (v / max) * 150}
-                      r="3.5"
-                      fill="oklch(0.88 0.20 130)"
+                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, height: "100%", justifyContent: "flex-end", position: "relative" }}>
+                  {(range === "week" || (i + 1) % 5 === 0 || b.today) && b.q > 0 && (
+                    <span className="mono" style={{ fontSize: 10, color: b.today ? "var(--accent)" : "var(--fg-2)", position: "absolute", top: -2, fontWeight: 600 }}>{b.q}</span>
+                  )}
+                  <div
+                    style={{
+                      width: "100%",
+                      maxWidth: range === "week" ? 60 : 28,
+                      height: `calc(${h}% - 18px)`,
+                      minHeight: b.q > 0 ? 4 : 2,
+                      borderRadius: "6px 6px 0 0",
+                      background: "var(--bg-2)",
+                      border: "1px solid var(--line)",
+                      position: "relative",
+                      overflow: "hidden",
+                      boxShadow: b.today ? "0 0 0 1.5px var(--accent), 0 0 16px color-mix(in oklch, var(--accent) 40%, transparent)" : "none"
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: correctH + "%",
+                        background: b.today
+                          ? "linear-gradient(180deg, var(--accent), color-mix(in oklch, var(--accent) 80%, var(--accent-2)))"
+                          : "linear-gradient(180deg, color-mix(in oklch, var(--accent) 70%, var(--accent-2)), color-mix(in oklch, var(--accent) 60%, transparent))"
+                      }}
                     />
-                  ))}
-                </>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: range === "week" ? 11 : 9,
+                      fontFamily: "var(--font-mono)",
+                      color: b.today ? "var(--accent)" : "var(--fg-2)",
+                      fontWeight: b.today ? 700 : 500,
+                      height: 14,
+                      lineHeight: "14px"
+                    }}
+                  >
+                    {range === "week" ? b.d : (i % 5 === 0 || i === data.length - 1 ? b.date : "")}
+                  </div>
+                </div>
               );
-            })()}
-          </svg>
+            })}
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 8, fontSize: 11, color: "var(--fg-2)", fontFamily: "var(--font-mono)" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: "linear-gradient(180deg, var(--accent), var(--accent-2))", display: "inline-block" }} />
+              {lang === "ru" ? "ВЕРНО" : "TO'G'RI"}
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--bg-2)", border: "1px solid var(--line)", display: "inline-block" }} />
+              {lang === "ru" ? "ВСЕГО" : "JAMI"}
+            </span>
+            <span style={{ marginLeft: "auto" }}>
+              {lang === "ru" ? "среднее" : "o'rtacha"}: <span style={{ color: "var(--fg-0)" }}>{avg}/{lang === "ru" ? "день" : "kun"}</span>
+            </span>
+          </div>
         </div>
 
         {/* Streak */}
@@ -99,7 +184,7 @@ export default function ProgressClient(p: Props) {
           <div>
             <div className="overline" style={{ marginBottom: 8 }}>🔥 STREAK</div>
             <div className="h-display" style={{ fontSize: 64, fontWeight: 700, lineHeight: 1 }}>{p.streakCount}</div>
-            <div style={{ fontSize: 13, color: "var(--fg-2)", marginTop: 4 }}>ketma-ket kun</div>
+            <div style={{ fontSize: 13, color: "var(--fg-2)", marginTop: 4 }}>{lang === "ru" ? "дней подряд" : "ketma-ket kun"}</div>
           </div>
           <div style={{ fontSize: 12, color: "var(--fg-2)" }}>
             Eng yaxshi: <span className="mono" style={{ color: "var(--fg-0)" }}>{p.streakCount}</span>
@@ -147,14 +232,13 @@ export default function ProgressClient(p: Props) {
           })}
         </div>
 
-        {/* GitHub-style 14-week heatmap */}
+        {/* Heatmap */}
         <div className="bento" style={{ padding: 24 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
             <div className="overline">📅 KUNDALIK MASHQ</div>
             <div className="overline" style={{ color: "var(--fg-2)" }}>OXIRGI 14 HAFTA</div>
           </div>
 
-          {/* Month labels */}
           <div style={{ display: "grid", gridTemplateColumns: `28px repeat(14, 1fr)`, gap: 4, marginBottom: 6 }}>
             <div></div>
             {monthLabels.map((m, c) => (
@@ -174,7 +258,6 @@ export default function ProgressClient(p: Props) {
             ))}
           </div>
 
-          {/* Grid */}
           <div style={{ display: "grid", gridTemplateColumns: `28px repeat(14, 1fr)`, gap: 4 }}>
             {Array.from({ length: 7 }).map((_, r) => (
               <>
@@ -218,11 +301,9 @@ export default function ProgressClient(p: Props) {
             ))}
           </div>
 
-          {/* Legend */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, fontSize: 11, color: "var(--fg-2)", fontFamily: "var(--font-mono)" }}>
-            <span>Bu hafta: <span style={{ color: "var(--fg-0)" }}>{totalThisWeek}</span></span>
+            <span>kam</span>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span>kam</span>
               {HEAT_OPS.map((op, i) => (
                 <div
                   key={i}
@@ -235,9 +316,8 @@ export default function ProgressClient(p: Props) {
                   }}
                 />
               ))}
-              <span>ko'p</span>
             </div>
-            <span>Jami: <span style={{ color: "var(--fg-0)" }}>{totalAll}</span></span>
+            <span>ko'p</span>
           </div>
         </div>
       </div>

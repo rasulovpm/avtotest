@@ -52,10 +52,22 @@ export default async function ResultPage({ params }: { params: { id: string } })
     if (a.isCorrect) catStats[c.id].correct++;
   }
 
+  // 20-savol grid uchun har bir savol uchun ok/wrong (per orderIndex)
+  const questionGrid = await prisma.testQuestion.findMany({
+    where: { testId: result.testId },
+    orderBy: { orderIndex: "asc" }
+  });
+  const answerByQ: Record<string, boolean> = {};
+  for (const a of allAnswers) answerByQ[a.questionId] = a.isCorrect;
+  const grid = questionGrid.map((tq) => ({
+    qid: tq.questionId,
+    correct: answerByQ[tq.questionId] ?? null
+  }));
+
   return (
     <>
       <Header />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+      <main style={{ background: "var(--bg-0)", minHeight: "100vh" }}>
         <ResultsClient
           result={{
             id: result.id,
@@ -78,6 +90,7 @@ export default async function ResultPage({ params }: { params: { id: string } })
             questionCy: a.question.textCy
           }))}
           categoryStats={Object.values(catStats)}
+          grid={grid}
         />
       </main>
       <Footer />

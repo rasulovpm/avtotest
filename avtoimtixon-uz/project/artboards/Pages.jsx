@@ -291,12 +291,100 @@ function Results({ t, lang, mode = 'passed' }) {
           </div>
         ))}
       </div>
+
+      {/* Question grid — 20 cells, green/red overview */}
+      <div className="bento" style={{ padding: 24, marginTop: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div className="overline">{lang === 'ru' ? '20 ВОПРОСОВ · ОБЗОР' : "20 SAVOL · UMUMIY KO'RINISH"}</div>
+          <div style={{ display: 'flex', gap: 14, fontSize: 11, color: 'var(--fg-2)', fontFamily: 'var(--font-mono)' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--success)', display: 'inline-block' }}></span>
+              {lang === 'ru' ? 'ВЕРНО' : "TO'G'RI"}
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--error)', display: 'inline-block' }}></span>
+              {lang === 'ru' ? 'НЕВЕРНО' : "XATO"}
+            </span>
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(20, 1fr)', gap: 6 }}>
+          {Array.from({ length: total }).map((_, i) => {
+            const failedIdx = [2, 6, 10, 13, 17, 1, 8, 15];
+            const passedIdx = [4, 11];
+            const wrongHere = (passed ? passedIdx : failedIdx).includes(i);
+            return (
+              <div key={i} style={{
+                aspectRatio: '1', borderRadius: 8,
+                background: wrongHere ? 'var(--error)' : 'var(--success)',
+                color: wrongHere ? '#fff' : '#0a1f0e',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700,
+              }}>
+                {i + 1}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Next steps — only when failed */}
+      {!passed && (
+        <div className="bento" style={{
+          padding: 24, marginTop: 16,
+          background: 'radial-gradient(60% 80% at 0% 0%, color-mix(in oklch, oklch(0.68 0.22 25) 12%, transparent), transparent 60%), var(--bg-1)',
+          borderColor: 'color-mix(in oklch, oklch(0.68 0.22 25) 28%, var(--line))',
+        }}>
+          <div className="overline" style={{ marginBottom: 14, color: 'oklch(0.78 0.18 25)' }}>
+            {lang === 'ru' ? '⚠ ЧТО ДАЛЬШЕ' : "⚠ KEYINGI QADAMLAR"}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+            {[
+              { n: '01', t: lang === 'ru' ? 'Разберите ошибки' : "Xatolarni tahlil qiling", s: lang === 'ru' ? 'Каждый вопрос с пояснением и статьёй ПДД' : "Har bir savol tushuntirish va YHQ moddasi bilan", btn: lang === 'ru' ? 'Открыть' : "Ochish" },
+              { n: '02', t: lang === 'ru' ? 'Слабые темы' : "Zaif mavzularni mashq qiling", s: lang === 'ru' ? 'Техника · Знаки · Дорожные ситуации' : "Texnika · Belgilar · Yo'l holatlari", btn: lang === 'ru' ? 'Начать' : "Boshlash" },
+              { n: '03', t: lang === 'ru' ? 'Повторите экзамен' : "Imtihonni qaytarish", s: lang === 'ru' ? 'Когда будете готовы — попробуйте снова' : "Tayyor bo'lganda — qayta urinib ko'ring", btn: lang === 'ru' ? '↻ Пересдать' : "↻ Qaytadan" },
+            ].map((step, i) => (
+              <div key={i} style={{ padding: 18, borderRadius: 14, background: 'var(--bg-2)', border: '1px solid var(--line)' }}>
+                <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', marginBottom: 8 }}>{step.n}</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>{step.t}</div>
+                <p style={{ margin: 0, fontSize: 12, color: 'var(--fg-2)', lineHeight: 1.5, marginBottom: 12 }}>{step.s}</p>
+                <button className="btn btn--ghost" style={{ fontSize: 12, padding: '6px 12px' }}>{step.btn} →</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // ── Progress ───────────────────────────────────────────────────
 function Progress({ t, lang }) {
+  const [range, setRange] = React.useState('week'); // 'week' | 'month'
+
+  // Deterministic data — kunlik aktivlik (savol soni)
+  const weekData = [
+    { d: lang === 'ru' ? 'Пн' : 'Du', date: '01', q: 28, c: 22 },
+    { d: lang === 'ru' ? 'Вт' : 'Se', date: '02', q: 45, c: 38 },
+    { d: lang === 'ru' ? 'Ср' : 'Cho', date: '03', q: 12, c: 9 },
+    { d: lang === 'ru' ? 'Чт' : 'Pa', date: '04', q: 60, c: 51 },
+    { d: lang === 'ru' ? 'Пт' : 'Ju', date: '05', q: 38, c: 32 },
+    { d: lang === 'ru' ? 'Сб' : 'Sha', date: '06', q: 80, c: 68 },
+    { d: lang === 'ru' ? 'Вс' : 'Ya', date: '07', q: 22, c: 18, today: true },
+  ];
+  // 30 days — synthetic
+  const monthData = Array.from({ length: 30 }).map((_, i) => {
+    const seed = (i * 17 + 3) % 13;
+    const q = Math.round(((seed / 13) * 70 + (i / 30) * 25 + (i % 7 === 0 ? 25 : 0)));
+    return { d: String(i + 1), date: String(i + 1), q, c: Math.round(q * 0.84), today: i === 29 };
+  });
+
+  const data = range === 'week' ? weekData : monthData;
+  const max = Math.max(...data.map((x) => x.q));
+  const total = data.reduce((s, x) => s + x.q, 0);
+  const totalCorrect = data.reduce((s, x) => s + x.c, 0);
+  const accuracy = Math.round((totalCorrect / total) * 100);
+  const avg = Math.round(total / data.length);
+
   return (
     <div style={{ width: 1280, padding: 48, background: 'var(--bg-0)', color: 'var(--fg-0)' }}>
       <div style={{ marginBottom: 28 }}>
@@ -305,32 +393,102 @@ function Progress({ t, lang }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
-        {/* Chart */}
-        <div className="bento" style={{ padding: 28, height: 280 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div className="overline">{lang === 'ru' ? 'НЕДЕЛЬНЫЙ ПРОГРЕСС' : 'HAFTALIK NATIJALAR'}</div>
-            <span className="chip">{lang === 'ru' ? '4 недели' : "4 hafta"}</span>
+        {/* Chart — bar chart with week/month toggle */}
+        <div className="bento" style={{ padding: 28, height: 320, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div>
+              <div className="overline" style={{ marginBottom: 4 }}>{lang === 'ru' ? 'ЕЖЕДНЕВНАЯ АКТИВНОСТЬ' : 'KUNDALIK AKTIVLIK'}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                <span className="h-display" style={{ fontSize: 28, fontWeight: 700 }}>{total}</span>
+                <span style={{ fontSize: 12, color: 'var(--fg-2)' }}>{lang === 'ru' ? 'вопросов · точность' : "savol · aniqlik"} <span className="mono" style={{ color: 'var(--success)' }}>{accuracy}%</span></span>
+              </div>
+            </div>
+            {/* Range toggle */}
+            <div style={{ display: 'flex', gap: 0, padding: 3, borderRadius: 10, background: 'var(--bg-2)', border: '1px solid var(--line)' }}>
+              {[
+                { k: 'week', l: lang === 'ru' ? '1 неделя' : '1 hafta' },
+                { k: 'month', l: lang === 'ru' ? '1 месяц' : '1 oy' },
+              ].map((r) => (
+                <button key={r.k} onClick={() => setRange(r.k)}
+                  style={{
+                    padding: '6px 14px', borderRadius: 7, border: 'none', cursor: 'pointer',
+                    fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600,
+                    background: range === r.k ? 'var(--bg-0)' : 'transparent',
+                    color: range === r.k ? 'var(--fg-0)' : 'var(--fg-2)',
+                    boxShadow: range === r.k ? '0 1px 2px rgba(0,0,0,0.4)' : 'none',
+                    transition: 'all .15s',
+                  }}>
+                  {r.l}
+                </button>
+              ))}
+            </div>
           </div>
-          <svg width="100%" height="180" viewBox="0 0 600 180" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="ar" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="oklch(0.82 0.18 195 / 0.4)" />
-                <stop offset="100%" stopColor="oklch(0.82 0.18 195 / 0)" />
-              </linearGradient>
-            </defs>
-            {[40, 80, 120, 160].map((y, i) => (
-              <line key={i} x1="0" y1={y} x2="600" y2={y} stroke="var(--line)" strokeDasharray="2 4" />
-            ))}
-            <path d="M0,140 L60,120 L120,90 L180,100 L240,75 L300,55 L360,68 L420,42 L480,30 L540,38 L600,20"
-              fill="none" stroke="oklch(0.82 0.18 195)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-            <path d="M0,140 L60,120 L120,90 L180,100 L240,75 L300,55 L360,68 L420,42 L480,30 L540,38 L600,20 L600,180 L0,180 Z"
-              fill="url(#ar)" />
-            {[
-              [60, 120], [120, 90], [180, 100], [240, 75], [300, 55], [360, 68], [420, 42], [480, 30], [540, 38], [600, 20]
-            ].map((p, i) => (
-              <circle key={i} cx={p[0]} cy={p[1]} r="3" fill="oklch(0.88 0.20 130)" />
-            ))}
-          </svg>
+
+          {/* Bars */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: range === 'week' ? 12 : 4, paddingTop: 18, position: 'relative' }}>
+            {/* gridlines */}
+            <div style={{ position: 'absolute', inset: '18px 0 22px 0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none' }}>
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} style={{ borderTop: '1px dashed var(--line)', height: 0 }}></div>
+              ))}
+            </div>
+            {data.map((b, i) => {
+              const h = (b.q / max) * 100;
+              const correctH = (b.c / b.q) * 100;
+              return (
+                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end', position: 'relative' }}>
+                  {/* value label only on hover-eligible — show on week always, every 5th on month */}
+                  {(range === 'week' || (i + 1) % 5 === 0 || b.today) && (
+                    <span className="mono" style={{ fontSize: 10, color: b.today ? 'var(--accent)' : 'var(--fg-2)', position: 'absolute', top: -2, fontWeight: 600 }}>{b.q}</span>
+                  )}
+                  {/* bar */}
+                  <div style={{
+                    width: '100%', maxWidth: range === 'week' ? 60 : 28,
+                    height: `calc(${h}% - 18px)`, minHeight: 4,
+                    borderRadius: '6px 6px 0 0',
+                    background: 'var(--bg-2)',
+                    border: '1px solid var(--line)',
+                    position: 'relative', overflow: 'hidden',
+                    boxShadow: b.today ? '0 0 0 1.5px var(--accent), 0 0 16px color-mix(in oklch, var(--accent) 40%, transparent)' : 'none',
+                  }}>
+                    {/* correct portion */}
+                    <div style={{
+                      position: 'absolute', bottom: 0, left: 0, right: 0,
+                      height: correctH + '%',
+                      background: b.today
+                        ? 'linear-gradient(180deg, var(--accent), color-mix(in oklch, var(--accent) 80%, var(--accent-2)))'
+                        : 'linear-gradient(180deg, color-mix(in oklch, var(--accent) 70%, var(--accent-2)), color-mix(in oklch, var(--accent) 60%, transparent))',
+                    }} />
+                  </div>
+                  {/* x-axis label */}
+                  <div style={{
+                    fontSize: range === 'week' ? 11 : 9,
+                    fontFamily: 'var(--font-mono)',
+                    color: b.today ? 'var(--accent)' : 'var(--fg-2)',
+                    fontWeight: b.today ? 700 : 500,
+                    height: 14, lineHeight: '14px',
+                  }}>
+                    {range === 'week' ? b.d : (i % 5 === 0 || i === data.length - 1 ? b.date : '')}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* legend */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 8, fontSize: 11, color: 'var(--fg-2)', fontFamily: 'var(--font-mono)' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: 'linear-gradient(180deg, var(--accent), var(--accent-2))', display: 'inline-block' }}></span>
+              {lang === 'ru' ? "ВЕРНО" : "TO'G'RI"}
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: 'var(--bg-2)', border: '1px solid var(--line)', display: 'inline-block' }}></span>
+              {lang === 'ru' ? "ВСЕГО" : "JAMI"}
+            </span>
+            <span style={{ marginLeft: 'auto' }}>
+              {lang === 'ru' ? 'среднее' : "o'rtacha"}: <span style={{ color: 'var(--fg-0)' }}>{avg}/{lang === 'ru' ? 'день' : 'kun'}</span>
+            </span>
+          </div>
         </div>
 
         {/* Streak */}

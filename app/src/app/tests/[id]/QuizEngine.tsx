@@ -196,9 +196,9 @@ export default function QuizEngine(p: Props) {
         </div>
       </header>
 
-      {/* Top question pills */}
-      <div style={{ padding: "16px 32px 12px", borderBottom: "1px solid var(--line)", overflowX: "auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${total}, minmax(28px, 1fr))`, gap: 6, minWidth: total * 32 }}>
+      {/* Top question pills — small, 2 rows, left-aligned */}
+      <div style={{ padding: "14px 32px 12px", borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "flex-start", overflowX: "auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.ceil(total / 2)}, 26px)`, gridAutoRows: "26px", gap: 5 }}>
           {Array.from({ length: total }).map((_, i) => {
             const qq = p.questions[i];
             const a = qq ? answers[qq.id] : undefined;
@@ -206,7 +206,6 @@ export default function QuizEngine(p: Props) {
             let bg = "var(--bg-2)";
             let border = "var(--line)";
             let color = "var(--fg-2)";
-            // Training rejimda — ranglar to'g'ri/xato bo'yicha
             if (a?.check) {
               if (a.check.isCorrect) {
                 bg = "var(--success)";
@@ -218,7 +217,6 @@ export default function QuizEngine(p: Props) {
                 border = "var(--error)";
               }
             } else if (a) {
-              // Faqat tanlangan (exam mode)
               bg = "color-mix(in oklch, var(--accent) 18%, var(--bg-2))";
               color = "var(--accent)";
               border = "color-mix(in oklch, var(--accent) 60%, var(--line))";
@@ -234,18 +232,24 @@ export default function QuizEngine(p: Props) {
               <button
                 key={i}
                 onClick={() => setCurrent(i)}
+                title={`Savol ${i + 1}`}
                 style={{
-                  padding: "10px 0",
-                  borderRadius: 8,
+                  width: 26,
+                  height: 26,
+                  padding: 0,
+                  borderRadius: 6,
                   border: "1.5px solid " + border,
                   background: bg,
                   color,
                   fontFamily: "var(--font-mono)",
-                  fontSize: 13,
+                  fontSize: 11,
                   fontWeight: 700,
                   cursor: "pointer",
-                  transition: "all .2s",
-                  boxShadow: isCur ? "0 0 0 2px color-mix(in oklch, var(--accent) 30%, transparent)" : "none"
+                  transition: "all .15s",
+                  boxShadow: isCur ? "0 0 0 2px color-mix(in oklch, var(--accent) 30%, transparent)" : "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
                 }}
               >
                 {i + 1}
@@ -255,9 +259,47 @@ export default function QuizEngine(p: Props) {
         </div>
       </div>
 
-      {/* Body */}
-      <div className="quiz-body" style={{ flex: 1, gap: 24, padding: 32, display: "grid", gridTemplateColumns: "minmax(0, 1.3fr) minmax(0, 1fr)" }}>
-        {/* LEFT — savol + variantlar */}
+      {/* Body — 2 columns: image LEFT, options RIGHT */}
+      <div className="quiz-body" style={{ flex: 1, gap: 24, padding: 32, display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.3fr)" }}>
+        {/* LEFT — image / sign */}
+        <div
+          className="bento"
+          style={{
+            padding: 24,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background:
+              "radial-gradient(80% 80% at 50% 0%, color-mix(in oklch, var(--accent) 10%, transparent), transparent 70%), var(--bg-1)",
+            minHeight: 380,
+            alignSelf: "flex-start",
+            position: "sticky",
+            top: 16
+          }}
+        >
+          <div
+            style={{
+              background: "var(--bg-0)",
+              borderRadius: 16,
+              padding: 40,
+              border: "1px solid var(--line)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+          >
+            {q?.imageUrl ? (
+              <img src={q.imageUrl} alt="" style={{ maxWidth: 240, maxHeight: 240, objectFit: "contain" }} />
+            ) : (
+              <RoadSignSvg
+                kind={(["priority-main", "warning-curve", "prohibit-no-entry", "mandatory-roundabout", "prohibit-speed", "info-parking"][current % 6]) as any}
+                size={220}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT — savol + variantlar */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <AnimatePresence mode="wait">
             {q && (
@@ -422,40 +464,6 @@ export default function QuizEngine(p: Props) {
           </div>
         </div>
 
-        {/* RIGHT — image / sign */}
-        <div
-          className="bento"
-          style={{
-            padding: 24,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background:
-              "radial-gradient(80% 80% at 50% 0%, color-mix(in oklch, var(--accent) 10%, transparent), transparent 70%), var(--bg-1)",
-            minHeight: 380
-          }}
-        >
-          <div
-            style={{
-              background: "var(--bg-0)",
-              borderRadius: 16,
-              padding: 40,
-              border: "1px solid var(--line)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}
-          >
-            {q?.imageUrl ? (
-              <img src={q.imageUrl} alt="" style={{ maxWidth: 240, maxHeight: 240, objectFit: "contain" }} />
-            ) : (
-              <RoadSignSvg
-                kind={(["priority-main", "warning-curve", "prohibit-no-entry", "mandatory-roundabout", "prohibit-speed", "info-parking"][current % 6]) as any}
-                size={220}
-              />
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Exit modal */}

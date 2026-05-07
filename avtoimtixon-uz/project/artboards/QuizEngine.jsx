@@ -129,9 +129,9 @@ function QuizEngine({ t, lang = 'uz', mode = 'real20' }) {
         </div>
       </header>
 
-      {/* TOP question pills — 20 numbered cells */}
-      <div style={{ padding: '16px 32px 12px', borderBottom: '1px solid var(--line)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${total}, 1fr)`, gap: 6 }}>
+      {/* TOP question pills — small, 2 rows, left-aligned */}
+      <div style={{ padding: '14px 32px 12px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${total / 2}, 26px)`, gridAutoRows: '26px', gap: 5 }}>
           {Array.from({ length: total }).map((_, i) => {
             const a = answers[i];
             const isCur = i === idx;
@@ -147,10 +147,12 @@ function QuizEngine({ t, lang = 'uz', mode = 'real20' }) {
             return (
               <button key={i} onClick={() => setIdx(i)} title={`Savol ${i + 1}`}
                 style={{
-                  padding: '10px 0', borderRadius: 8, border: '1.5px solid ' + border, background: bg, color,
-                  fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                  transition: 'all .2s', position: 'relative',
+                  width: 26, height: 26, padding: 0, borderRadius: 6,
+                  border: '1.5px solid ' + border, background: bg, color,
+                  fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                  transition: 'all .15s',
                   boxShadow: isCur ? '0 0 0 2px color-mix(in oklch, var(--accent) 30%, transparent)' : 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
                 {i + 1}
               </button>
@@ -159,9 +161,23 @@ function QuizEngine({ t, lang = 'uz', mode = 'real20' }) {
         </div>
       </div>
 
-      {/* Body — 2 columns: options LEFT, image RIGHT */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 24, padding: 32 }}>
-        {/* LEFT — question + options */}
+      {/* Body — 2 columns: image LEFT, options RIGHT */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: 24, padding: 32 }}>
+        {/* LEFT — image */}
+        <div className="bento" style={{
+          padding: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: `radial-gradient(80% 80% at 50% 0%, color-mix(in oklch, var(--accent) 10%, transparent), transparent 70%), var(--bg-1)`,
+          minHeight: 380, alignSelf: 'flex-start', position: 'sticky', top: 16,
+        }}>
+          <div style={{
+            background: 'var(--bg-0)', borderRadius: 16, padding: 40, border: '1px solid var(--line)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <RoadSign kind={q.sign} size={220} />
+          </div>
+        </div>
+
+        {/* RIGHT — question + options */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div>
             <div className="overline" style={{ marginBottom: 8 }}>SAVOL #{(idx + 1).toString().padStart(2, '0')}</div>
@@ -229,19 +245,6 @@ function QuizEngine({ t, lang = 'uz', mode = 'real20' }) {
           </div>
         </div>
 
-        {/* RIGHT — image */}
-        <div className="bento" style={{
-          padding: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: `radial-gradient(80% 80% at 50% 0%, color-mix(in oklch, var(--accent) 10%, transparent), transparent 70%), var(--bg-1)`,
-          minHeight: 380,
-        }}>
-          <div style={{
-            background: 'var(--bg-0)', borderRadius: 16, padding: 40, border: '1px solid var(--line)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <RoadSign kind={q.sign} size={220} />
-          </div>
-        </div>
       </div>
     </div>
   );
