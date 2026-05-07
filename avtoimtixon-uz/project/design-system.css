@@ -1,0 +1,200 @@
+/* ════════════════════════════════════════════════════════════════
+   AvtoImtihon.uz — Design System
+   Aesthetic: Dark mode + neon aksent (cyan + lime)
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Brand / Aksent ────────────────────────────────────── */
+  --accent: oklch(0.82 0.18 195);          /* electric cyan */
+  --accent-2: oklch(0.88 0.20 130);        /* lime */
+  --accent-glow: color-mix(in oklch, var(--accent) 60%, transparent);
+
+  /* ── Semantic colors ───────────────────────────────────── */
+  --success: oklch(0.85 0.18 145);
+  --error:   oklch(0.70 0.22 22);
+  --warning: oklch(0.86 0.16 85);
+  --info:    var(--accent);
+
+  /* ── Surfaces (dark) ───────────────────────────────────── */
+  --bg-0: oklch(0.14 0.012 250);           /* page bg */
+  --bg-1: oklch(0.18 0.014 250);           /* card */
+  --bg-2: oklch(0.22 0.016 250);           /* card hover / elevated */
+  --bg-3: oklch(0.28 0.018 250);           /* deeper elevated */
+  --line: oklch(0.30 0.012 250 / 0.6);     /* hairline border */
+  --line-2: oklch(0.40 0.012 250 / 0.7);
+
+  /* ── Text ─────────────────────────────────────────────── */
+  --fg-0: oklch(0.97 0.005 250);           /* primary text */
+  --fg-1: oklch(0.78 0.012 250);           /* secondary */
+  --fg-2: oklch(0.58 0.014 250);           /* tertiary */
+  --fg-3: oklch(0.42 0.014 250);           /* quaternary */
+
+  /* ── Type ─────────────────────────────────────────────── */
+  --font-display: 'Space Grotesk', 'Manrope', system-ui, sans-serif;
+  --font-body: 'Manrope', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+
+  /* ── Bento ───────────────────────────────────────────── */
+  --bento-gap: 16px;
+  --bento-radius: 22px;
+
+  /* ── Shadows / glows ─────────────────────────────────── */
+  --shadow-card: 0 1px 0 oklch(1 0 0 / 0.04) inset, 0 8px 24px oklch(0 0 0 / 0.4);
+  --shadow-glow: 0 0 0 1px color-mix(in oklch, var(--accent) 40%, transparent),
+                 0 8px 40px color-mix(in oklch, var(--accent) 35%, transparent);
+}
+
+/* ── Light mode override (toggleable) ───────────────────── */
+[data-theme="light"] {
+  --bg-0: oklch(0.98 0.004 250);
+  --bg-1: oklch(1 0 0);
+  --bg-2: oklch(0.97 0.006 250);
+  --bg-3: oklch(0.94 0.008 250);
+  --line: oklch(0.88 0.008 250 / 0.9);
+  --line-2: oklch(0.80 0.010 250 / 0.9);
+  --fg-0: oklch(0.18 0.014 250);
+  --fg-1: oklch(0.36 0.014 250);
+  --fg-2: oklch(0.54 0.012 250);
+  --fg-3: oklch(0.70 0.010 250);
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.04), 0 8px 24px oklch(0 0 0 / 0.06);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg-0);
+  color: var(--fg-0);
+  font-feature-settings: "ss01", "cv01";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Utility components used everywhere ────────────────── */
+.bento {
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: var(--bento-radius);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: transform .35s cubic-bezier(.2,.8,.2,1), border-color .25s, background .25s;
+}
+.bento:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklch, var(--accent) 40%, var(--line));
+}
+.bento--accent {
+  background:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in oklch, var(--accent) 18%, transparent), transparent 60%),
+    var(--bg-1);
+}
+.bento--accent-2 {
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in oklch, var(--accent-2) 18%, transparent), transparent 60%),
+    var(--bg-1);
+}
+
+.overline {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  font-weight: 500;
+}
+
+.h-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+}
+.h1 { font-size: clamp(40px, 6vw, 84px); }
+.h2 { font-size: clamp(28px, 3.4vw, 48px); }
+.h3 { font-size: clamp(22px, 2.4vw, 32px); }
+.h4 { font-size: 20px; line-height: 1.2; }
+
+.btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 999px;
+  padding: 12px 22px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform .15s, background .2s, box-shadow .25s;
+}
+.btn:active { transform: scale(0.97); }
+.btn--primary {
+  background: var(--accent);
+  color: oklch(0.16 0.04 250);
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--accent) 50%, transparent),
+              0 8px 28px color-mix(in oklch, var(--accent) 35%, transparent);
+}
+.btn--primary:hover { box-shadow: 0 0 0 1px var(--accent), 0 10px 36px color-mix(in oklch, var(--accent) 50%, transparent); }
+.btn--ghost {
+  background: transparent;
+  color: var(--fg-0);
+  border: 1px solid var(--line-2);
+}
+.btn--ghost:hover { background: var(--bg-2); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+  background: var(--bg-2);
+  color: var(--fg-1);
+  border: 1px solid var(--line);
+}
+.chip--accent { background: color-mix(in oklch, var(--accent) 14%, transparent); color: var(--accent); border-color: color-mix(in oklch, var(--accent) 40%, transparent); }
+.chip--lime   { background: color-mix(in oklch, var(--accent-2) 14%, transparent); color: var(--accent-2); border-color: color-mix(in oklch, var(--accent-2) 40%, transparent); }
+.chip--error  { background: color-mix(in oklch, var(--error) 14%, transparent); color: var(--error); border-color: color-mix(in oklch, var(--error) 40%, transparent); }
+
+.divider { height: 1px; background: var(--line); }
+
+/* dotted grid background helper */
+.dotgrid {
+  background-image: radial-gradient(oklch(1 0 0 / 0.05) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+[data-theme="light"] .dotgrid {
+  background-image: radial-gradient(oklch(0 0 0 / 0.06) 1px, transparent 1px);
+}
+
+/* progress bar */
+.progress {
+  height: 6px;
+  background: var(--bg-3);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.progress > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: 999px;
+  transition: width .6s cubic-bezier(.2,.8,.2,1);
+}
+
+/* numeric / mono label */
+.mono { font-family: var(--font-mono); }
+
+/* glow ring */
+.ring-glow { box-shadow: var(--shadow-glow); }
+
+/* shimmer accent line */
+.accent-line {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}

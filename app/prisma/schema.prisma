@@ -1,0 +1,224 @@
+// Prisma schema — avtoimtixon.uz
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SQLite enum'larni qo'llab-quvvatlamaydi — string sifatida saqlanadi.
+// Qiymatlar: Role: USER|ADMIN; Plan: FREE|STANDARD|PREMIUM;
+// Difficulty: EASY|MEDIUM|HARD;
+// SignCategory: WARNING|PROHIBITORY|MANDATORY|INFORMATION|PRIORITY|ADDITIONAL
+// PaymentStatus: PENDING|ACTIVE|REJECTED|EXPIRED
+// PaymentMethod: CLICK|MANUAL
+
+model User {
+  id            String    @id @default(cuid())
+  phone         String    @unique
+  fullName      String?
+  telegramId    String?   @unique
+  telegramUser  String?
+  avatarUrl     String?
+  role          String    @default("USER")
+  plan          String    @default("FREE")
+  planExpiresAt DateTime?
+  streakCount   Int       @default(0)
+  totalXp       Int       @default(0)
+  preferredLang String    @default("uz")
+  createdAt     DateTime  @default(now())
+  lastActiveAt  DateTime  @default(now())
+
+  answers     UserAnswer[]
+  results     TestResult[]
+  payments    Payment[]
+  otpCodes    OtpCode[]
+}
+
+model OtpCode {
+  id         String   @id @default(cuid())
+  userId     String?
+  phone      String
+  code       String
+  expiresAt  DateTime
+  consumed   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([phone, code])
+}
+
+model Category {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  nameUz      String
+  nameRu      String
+  nameCy      String
+  icon        String?
+  color       String?
+  description String?
+  orderIndex  Int     @default(0)
+
+  tests     Test[]
+  questions Question[]
+}
+
+model Test {
+  id                String     @id @default(cuid())
+  categoryId        String?
+  titleUz           String
+  titleRu           String
+  titleCy           String
+  difficulty        String     @default("MEDIUM")
+  questionCount     Int        @default(20)
+  timeLimitMinutes  Int        @default(25)
+  passingScore      Int        @default(18)
+  isExamSimulation  Boolean    @default(false)
+  isPublished       Boolean    @default(true)
+  orderIndex        Int        @default(0)
+  createdAt         DateTime   @default(now())
+
+  category  Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  questions TestQuestion[]
+  results   TestResult[]
+  answers   UserAnswer[]
+}
+
+model Question {
+  id              String     @id @default(cuid())
+  categoryId      String?
+  textUz          String
+  textRu          String
+  textCy          String
+  imageUrl        String?
+  explanationUz   String?
+  explanationRu   String?
+  explanationCy   String?
+  difficulty      String     @default("MEDIUM")
+  relatedLawArticle String?
+  isPublished     Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  category Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  options  Option[]
+  tests    TestQuestion[]
+  answers  UserAnswer[]
+}
+
+model Option {
+  id         String   @id @default(cuid())
+  questionId String
+  textUz     String
+  textRu     String
+  textCy     String
+  isCorrect  Boolean  @default(false)
+  orderIndex Int      @default(0)
+
+  question Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers  UserAnswer[]
+}
+
+model TestQuestion {
+  testId     String
+  questionId String
+  orderIndex Int    @default(0)
+
+  test     Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([testId, questionId])
+}
+
+model UserAnswer {
+  id               String   @id @default(cuid())
+  userId           String
+  questionId       String
+  testId           String?
+  selectedOptionId String?
+  isCorrect        Boolean
+  timeSpentSeconds Int      @default(0)
+  answeredAt       DateTime @default(now())
+
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  test     Test?   @relation(fields: [testId], references: [id], onDelete: SetNull)
+  option   Option? @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, answeredAt])
+}
+
+model TestResult {
+  id               String   @id @default(cuid())
+  userId           String
+  testId           String
+  score            Int
+  totalQuestions   Int
+  correctCount     Int
+  timeSpentSeconds Int
+  passed           Boolean  @default(false)
+  completedAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  test Test @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@index([userId, completedAt])
+}
+
+model RoadSign {
+  id                String       @id @default(cuid())
+  code              String       @unique
+  nameUz            String
+  nameRu            String
+  nameCy            String
+  category          String
+  imageUrl          String?
+  descriptionUz     String?
+  descriptionRu     String?
+  descriptionCy     String?
+  relatedLawArticle String?
+  orderIndex        Int          @default(0)
+}
+
+model Tariff {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  nameUz      String
+  nameRu      String
+  nameCy      String
+  durationDays Int
+  priceUzs    Int
+  isActive    Boolean @default(true)
+  features    String  // JSON array of feature keys
+
+  payments Payment[]
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  userId      String
+  tariffId    String
+  amountUzs   Int
+  status      String        @default("PENDING")
+  method      String        @default("CLICK")
+  externalId  String?       // click transaction id
+  note        String?       // admin note for manual approval
+  activatedAt DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tariff Tariff @relation(fields: [tariffId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+model Setting {
+  key   String @id
+  value String
+}

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>avtoimtihon.uz · Design Canvas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="design-system.css">
+<style>
+  body { background: #0c1014; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="components/i18n.jsx"></script>
+<script type="text/babel" src="components/RoadSign.jsx"></script>
+<script type="text/babel" src="artboards/Landing.jsx"></script>
+<script type="text/babel" src="artboards/QuizEngine.jsx"></script>
+<script type="text/babel" src="artboards/Pages.jsx"></script>
+<script type="text/babel" src="artboards/Mobile.jsx"></script>
+<script type="text/babel" src="artboards/Admin.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "lang": "uz",
+  "theme": "dark",
+  "accent": "cyan",
+  "bentoGap": 16,
+  "anim": "spring"
+}/*EDITMODE-END*/;
+
+const ACCENTS = {
+  cyan:   { a: 'oklch(0.82 0.18 195)', b: 'oklch(0.88 0.20 130)' },
+  violet: { a: 'oklch(0.72 0.20 295)', b: 'oklch(0.84 0.16 200)' },
+  orange: { a: 'oklch(0.78 0.18 55)',  b: 'oklch(0.86 0.16 95)' },
+  pink:   { a: 'oklch(0.78 0.20 0)',   b: 'oklch(0.84 0.16 60)' },
+};
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const lang = t.lang;
+  const strings = window.I18N[lang] || window.I18N.uz;
+
+  // Apply tokens to :root
+  React.useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute('data-theme', t.theme);
+    const acc = ACCENTS[t.accent] || ACCENTS.cyan;
+    root.style.setProperty('--accent', acc.a);
+    root.style.setProperty('--accent-2', acc.b);
+    root.style.setProperty('--bento-gap', t.bentoGap + 'px');
+  }, [t.theme, t.accent, t.bentoGap]);
+
+  return (
+    <>
+      <DesignCanvas title="avtoimtihon.uz" subtitle="Bento Grid · Dark + neon · 2026">
+        <DCSection id="web" title="Web · Desktop" subtitle="1280px artboards · all flows">
+          <DCArtboard id="landing" label="01 · Landing" width={1280} height={1640}>
+            <Landing t={strings} accent={t.accent} />
+          </DCArtboard>
+          <DCArtboard id="catalog" label="02 · Tests Catalog" width={1280} height={1100}>
+            <Catalog t={strings} lang={lang} />
+          </DCArtboard>
+          <DCArtboard id="quiz20" label="03 · Quiz · Real imtihon (20) · F1–F6 keyboard" width={1280} height={880}>
+            <QuizEngine t={strings} lang={lang} mode="real20" />
+          </DCArtboard>
+          <DCArtboard id="quiz50" label="03b · Quiz · Real imtihon (50)" width={1280} height={880}>
+            <QuizEngine t={strings} lang={lang} mode="real50" />
+          </DCArtboard>
+          <DCArtboard id="results" label="04 · Results" width={1280} height={1080}>
+            <Results t={strings} lang={lang} />
+          </DCArtboard>
+          <DCArtboard id="progress" label="05 · Progress" width={1280} height={1180}>
+            <Progress t={strings} lang={lang} />
+          </DCArtboard>
+          <DCArtboard id="signs" label="06 · Signs library" width={1280} height={920}>
+            <SignsLibrary t={strings} lang={lang} />
+          </DCArtboard>
+          <DCArtboard id="auth" label="07 · Auth" width={1280} height={880}>
+            <Auth t={strings} lang={lang} />
+          </DCArtboard>
+          <DCArtboard id="pricing" label="08 · Pricing" width={1280} height={780}>
+            <Pricing t={strings} lang={lang} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="admin" title="Admin Panel" subtitle="1440px · sidebar layout · qora+neon">
+          <DCArtboard id="adm-dash" label="Admin · Dashboard" width={1440} height={1100}>
+            <AdminDashboard />
+          </DCArtboard>
+          <DCArtboard id="adm-questions" label="Admin · Savollar bazasi" width={1440} height={1100}>
+            <AdminQuestions />
+          </DCArtboard>
+          <DCArtboard id="adm-editor" label="Admin · Savol editor" width={1440} height={1080}>
+            <AdminQuestionEditor />
+          </DCArtboard>
+          <DCArtboard id="adm-users" label="Admin · Foydalanuvchilar" width={1440} height={1080}>
+            <AdminUsers />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="mobile" title="Mobile · iOS" subtitle="iPhone 14 · 390×844">
+          <DCArtboard id="m-landing" label="Mobile · Landing" width={420} height={870}>
+            <MobileLanding t={strings} lang={lang} />
+          </DCArtboard>
+          <DCArtboard id="m-quiz" label="Mobile · Quiz" width={420} height={870}>
+            <MobileQuiz t={strings} lang={lang} />
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel title="Tweaks · avtoimtihon.uz">
+        <TweakSection label="Tema" />
+        <TweakRadio label="Mode" value={t.theme} options={['dark', 'light']} onChange={(v) => setTweak('theme', v)} />
+        <TweakSelect label="Aksent rang" value={t.accent}
+          options={[
+            { value: 'cyan', label: 'Cyan + Lime (default)' },
+            { value: 'violet', label: 'Violet + Cyan' },
+            { value: 'orange', label: 'Orange + Yellow' },
+            { value: 'pink', label: 'Pink + Coral' },
+          ]}
+          onChange={(v) => setTweak('accent', v)} />
+
+        <TweakSection label="Til (Language)" />
+        <TweakRadio label="Til" value={t.lang} options={[
+          { value: 'uz', label: "O'zbek" },
+          { value: 'cy', label: 'Ўзбек' },
+          { value: 'ru', label: 'Русский' },
+        ]} onChange={(v) => setTweak('lang', v)} />
+
+        <TweakSection label="Layout" />
+        <TweakSlider label="Bento gap" value={t.bentoGap} min={8} max={32} step={2} unit="px"
+          onChange={(v) => setTweak('bentoGap', v)} />
+
+        <TweakSection label="Animatsiya" />
+        <TweakRadio label="Style" value={t.anim} options={['off', 'subtle', 'spring']} onChange={(v) => setTweak('anim', v)} />
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
