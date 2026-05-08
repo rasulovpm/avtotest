@@ -67,7 +67,7 @@ export default function MistakesClient({
           <p style={{ color: "var(--fg-2)", marginBottom: 20, fontSize: 14 }}>
             Hali biror testni yechmagansiz yoki barcha javoblaringiz to'g'ri.
           </p>
-          <Link href="/tests" className="btn btn--primary">Testlar →</Link>
+          <Link href="/" className="btn btn--primary">Bosh sahifa →</Link>
         </div>
       </div>
     );
@@ -198,7 +198,7 @@ export default function MistakesClient({
               ← Oldingi
             </button>
             {current === total - 1 ? (
-              <Link href="/tests" className="btn btn--primary">Tugatish →</Link>
+              <Link href="/" className="btn btn--primary">Tugatish →</Link>
             ) : (
               <button onClick={() => setCurrent((i) => Math.min(total - 1, i + 1))} className="btn btn--primary">
                 Keyingi →

@@ -63,12 +63,19 @@ export const authOptions: NextAuthOptions = {
             token.plan = u.plan as "FREE" | "STANDARD" | "PREMIUM";
             (token as any).planExpiresAt = u.planExpiresAt?.toISOString() ?? null;
             token.name = u.fullName ?? token.name;
+          } else if (token.uid) {
+            // User mavjud emas (DB qayta yaratilgan bo'lsa). Tokenni bekor qilamiz.
+            return {} as any;
           }
         } catch (_) {}
       }
       return token;
     },
     async session({ session, token }) {
+      // Agar token bekor bo'lgan bo'lsa (DB reset / user o'chirilgan) — sessiyani bo'sh qaytaramiz.
+      if (!token.uid) {
+        return { ...session, user: undefined } as any;
+      }
       if (session.user) {
         (session.user as any).id = token.uid;
         (session.user as any).phone = token.phone;

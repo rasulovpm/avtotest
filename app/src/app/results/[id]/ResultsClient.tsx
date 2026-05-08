@@ -134,7 +134,7 @@ export default function ResultsClient({ result, wrongAnswers, categoryStats, gri
               <Link href={`/tests/${result.testId}`} className="btn btn--primary">
                 ↻ {t.results.retry}
               </Link>
-              <Link href="/tests" className="btn btn--ghost">
+              <Link href="/" className="btn btn--ghost">
                 {t.results.goHome} →
               </Link>
             </div>
@@ -284,7 +284,7 @@ export default function ResultsClient({ result, wrongAnswers, categoryStats, gri
                 t: lang === "ru" ? "Слабые темы" : "Zaif mavzularni mashq qiling",
                 s: lang === "ru" ? "Категория · Знаки · Дорожные ситуации" : "Kategoriya bo'yicha mashq",
                 btn: lang === "ru" ? "Начать" : "Boshlash",
-                href: "/tests"
+                href: "/tests/test-yhq"
               },
               {
                 n: "03",

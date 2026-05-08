@@ -49,6 +49,8 @@ export default function QuizEngine(p: Props) {
   const [timeLeft, setTimeLeft] = useState(p.timeLimitSec);
   const [submitting, setSubmitting] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  // Exam rejimda oldingi savolning natijasi (faqat to'g'ri/xato — explanationsiz)
+  const [lastFeedback, setLastFeedback] = useState<{ ok: boolean; qIdx: number } | null>(null);
   const startedAt = useRef(Date.now());
 
   const q = p.questions[current];
@@ -64,14 +66,20 @@ export default function QuizEngine(p: Props) {
       const timeSpent = Math.floor((Date.now() - startedAt.current) / 1000);
       const flat: Record<string, string> = {};
       Object.entries(answers).forEach(([k, v]) => (flat[k] = v.sel));
+      const questionIds = p.questions.map((qq) => qq.id);
       const res = await fetch("/api/quiz/submit", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ testId: p.testId, answers: flat, timeSpentSeconds: timeSpent })
+        body: JSON.stringify({ testId: p.testId, answers: flat, questionIds, timeSpentSeconds: timeSpent })
       });
       const data = await res.json();
       if (res.ok && data.resultId) {
         router.push(`/results/${data.resultId}`);
+      } else if (res.ok && data.ticket) {
+        const total = data.total || 0;
+        const correct = data.correct || 0;
+        alert(`Bilet yakunlandi: ${correct} / ${total} to'g'ri (${data.score}%)`);
+        router.push("/");
       } else {
         alert("Xatolik: " + (data.error || ""));
         setSubmitting(false);
@@ -80,7 +88,7 @@ export default function QuizEngine(p: Props) {
       alert("Tarmoq xatosi");
       setSubmitting(false);
     }
-  }, [answers, p.testId, router, submitting]);
+  }, [answers, p.testId, p.questions, router, submitting]);
 
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -120,6 +128,38 @@ export default function QuizEngine(p: Props) {
     [q, isTraining, answers]
   );
 
+  // Exam rejimda joriy savolni darhol tekshirib, oldingi savol natijasini ko'rsatamiz.
+  const checkCurrentIfExam = useCallback(async () => {
+    if (isTraining) return;
+    if (!q) return;
+    const a = answers[q.id];
+    if (!a || a.check) return;
+    try {
+      const res = await fetch("/api/quiz/check", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ questionId: q.id, optionId: a.sel })
+      });
+      if (!res.ok) return;
+      const data: CheckResult = await res.json();
+      setAnswers((map) => ({ ...map, [q.id]: { sel: a.sel, check: data } }));
+      setLastFeedback({ ok: data.isCorrect, qIdx: current });
+      // 2.5s'dan so'ng feedback chip'ni avtomatik yopamiz
+      setTimeout(() => setLastFeedback((f) => (f && f.qIdx === current ? null : f)), 2500);
+    } catch {}
+  }, [isTraining, q, answers, current]);
+
+  const goTo = useCallback(
+    async (target: number) => {
+      if (target === current) return;
+      const clamped = Math.max(0, Math.min(total - 1, target));
+      if (clamped === current) return;
+      await checkCurrentIfExam();
+      setCurrent(clamped);
+    },
+    [current, total, checkCurrentIfExam]
+  );
+
   // F1..F6 + arrows
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -131,18 +171,18 @@ export default function QuizEngine(p: Props) {
         }
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        setCurrent((i) => Math.min(total - 1, i + 1));
+        goTo(current + 1);
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
-        setCurrent((i) => Math.max(0, i - 1));
+        goTo(current - 1);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [choose, total]);
+  }, [choose, total, goTo, current]);
 
-  const next = () => setCurrent((i) => Math.min(total - 1, i + 1));
-  const prev = () => setCurrent((i) => Math.max(0, i - 1));
+  const next = () => goTo(current + 1);
+  const prev = () => goTo(current - 1);
   const danger = timeLeft < 120;
   const explanationText = cur?.check?.explanation
     ? cur.check.explanation[lang] || cur.check.explanation.uz || null
@@ -231,7 +271,7 @@ export default function QuizEngine(p: Props) {
             return (
               <button
                 key={i}
-                onClick={() => setCurrent(i)}
+                onClick={() => goTo(i)}
                 title={`Savol ${i + 1}`}
                 style={{
                   width: 26,
@@ -310,8 +350,23 @@ export default function QuizEngine(p: Props) {
                 exit={{ opacity: 0, x: -12 }}
                 transition={{ duration: 0.18 }}
               >
-                <div className="overline" style={{ marginBottom: 8 }}>
-                  SAVOL #{(current + 1).toString().padStart(2, "0")}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
+                  <div className="overline">
+                    SAVOL #{(current + 1).toString().padStart(2, "0")}
+                  </div>
+                  {!isTraining && lastFeedback && (
+                    <motion.span
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0 }}
+                      className={"chip " + (lastFeedback.ok ? "chip--lime" : "chip--error")}
+                      style={{ fontSize: 11, padding: "4px 10px" }}
+                    >
+                      {lastFeedback.ok
+                        ? `✓ Oldingi savol — to'g'ri`
+                        : `✕ Oldingi savol — xato`}
+                    </motion.span>
+                  )}
                 </div>
                 <h2 className="h-display" style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.3, margin: 0 }}>
                   {pickLocalized(q, lang)}
@@ -453,7 +508,14 @@ export default function QuizEngine(p: Props) {
               F1…F{Math.min(q?.options.length || 4, 6)} · ← →
             </span>
             {current === total - 1 ? (
-              <button className="btn btn--primary" onClick={submit} disabled={submitting}>
+              <button
+                className="btn btn--primary"
+                onClick={async () => {
+                  await checkCurrentIfExam();
+                  submit();
+                }}
+                disabled={submitting}
+              >
                 {submitting ? "..." : `✓ ${t.quiz.submit}`}
               </button>
             ) : (
@@ -500,7 +562,7 @@ export default function QuizEngine(p: Props) {
                 Javoblaringiz saqlanmasdan yo'qoladi.
               </p>
               <div style={{ display: "flex", gap: 8 }}>
-                <Link href="/tests" className="btn btn--ghost" style={{ flex: 1, justifyContent: "center" }}>
+                <Link href="/" className="btn btn--ghost" style={{ flex: 1, justifyContent: "center" }}>
                   {t.common.yes}
                 </Link>
                 <button onClick={() => setShowExitConfirm(false)} className="btn btn--primary" style={{ flex: 1, justifyContent: "center" }}>

@@ -6,6 +6,7 @@ import { RoadSignSvg } from "@/components/RoadSignSvg";
 
 type Q = {
   id: string;
+  number: number;
   textUz: string;
   textRu: string;
   categoryName: string;
@@ -15,6 +16,7 @@ type Q = {
   optionCount: number;
   correctCount: number;
   answerCount: number;
+  tickets: { id: string; number: number }[];
   createdAt: string;
 };
 
@@ -138,11 +140,11 @@ export default function QuestionsTable({
       {/* Table */}
       <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
         <div className="qtable-overflow" style={{ overflowX: "auto" }}>
-          <div style={{ minWidth: 980 }}>
+          <div style={{ minWidth: 1080 }}>
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "60px 80px 1fr 140px 90px 80px 100px 80px",
+                gridTemplateColumns: "60px 60px 1fr 140px 90px 80px 110px 100px 80px",
                 padding: "12px 18px",
                 borderBottom: "1px solid var(--line)",
                 alignItems: "center",
@@ -161,6 +163,7 @@ export default function QuestionsTable({
               <span>Mavzu</span>
               <span>Qiyinlik</span>
               <span>Variant</span>
+              <span>Biletlar</span>
               <span>Status</span>
               <span></span>
             </div>
@@ -171,7 +174,7 @@ export default function QuestionsTable({
                   key={qq.id}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "60px 80px 1fr 140px 90px 80px 100px 80px",
+                    gridTemplateColumns: "60px 60px 1fr 140px 90px 80px 110px 100px 80px",
                     padding: "14px 18px",
                     borderBottom: i < questions.length - 1 ? "1px solid var(--line)" : "none",
                     alignItems: "center",
@@ -179,7 +182,7 @@ export default function QuestionsTable({
                     fontSize: 13
                   }}
                 >
-                  <span className="mono" style={{ fontSize: 11, color: "var(--fg-2)" }}>#{qq.id.slice(-5)}</span>
+                  <span className="mono" style={{ fontSize: 12, color: "var(--fg-1)", fontWeight: 600 }}>#{qq.number}</span>
                   <RoadSignSvg kind={sign} size={36} />
                   <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "var(--fg-0)" }}>
                     {qq.textUz}
@@ -190,6 +193,9 @@ export default function QuestionsTable({
                   </span>
                   <span className="mono" style={{ fontSize: 12, color: qq.correctCount === 1 ? "var(--success)" : "var(--error)" }}>
                     {qq.optionCount}
+                  </span>
+                  <span className="mono" style={{ fontSize: 11, color: qq.tickets.length ? "var(--accent)" : "var(--fg-3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {qq.tickets.length ? qq.tickets.map((t) => `#${t.number}`).join(", ") : "—"}
                   </span>
                   <span
                     style={{

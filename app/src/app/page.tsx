@@ -69,9 +69,9 @@ export default async function HomePage() {
     else if (i > 0) break;
   }
 
-  const planExpiresAt = user?.planExpiresAt;
-  const isPro = user?.plan && user.plan !== "FREE";
-  const totalDays = isPro && planExpiresAt && payments[0]?.tariff
+  const planExpiresAt = user?.planExpiresAt ?? null;
+  const isPro = Boolean(user?.plan && user.plan !== "FREE" && planExpiresAt);
+  const totalDays = isPro && payments[0]?.tariff
     ? payments[0].tariff.durationDays
     : 30;
   const daysLeft = planExpiresAt

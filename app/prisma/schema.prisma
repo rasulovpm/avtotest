@@ -53,6 +53,7 @@ model OtpCode {
 
 model Category {
   id          String  @id @default(cuid())
+  number      Int     @unique
   slug        String  @unique
   nameUz      String
   nameRu      String
@@ -79,6 +80,8 @@ model Test {
   isExamSimulation  Boolean    @default(false)
   isPublished       Boolean    @default(true)
   orderIndex        Int        @default(0)
+  // MANUAL — testQuestion'lar orqali bog'langan; RANDOM_BY_TOPIC — har gal mavzu nisbati bo'yicha tasodifiy tanlanadi
+  generationMode    String     @default("MANUAL")
   createdAt         DateTime   @default(now())
 
   category  Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -89,6 +92,7 @@ model Test {
 
 model Question {
   id              String     @id @default(cuid())
+  number          Int        @unique
   categoryId      String?
   textUz          String
   textRu          String
@@ -107,6 +111,34 @@ model Question {
   options  Option[]
   tests    TestQuestion[]
   answers  UserAnswer[]
+  tickets  TicketQuestion[]
+}
+
+model Ticket {
+  id          String   @id @default(cuid())
+  number      Int      @unique
+  titleUz     String
+  titleRu     String
+  titleCy     String
+  description String?
+  isPublished Boolean  @default(true)
+  orderIndex  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questions TicketQuestion[]
+}
+
+model TicketQuestion {
+  ticketId   String
+  questionId String
+  orderIndex Int    @default(0)
+
+  ticket   Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([ticketId, questionId])
+  @@index([questionId])
 }
 
 model Option {

@@ -18,11 +18,16 @@ export default async function AdminQuestionsPage({ searchParams }: { searchParam
   const [questions, categories, totals] = await Promise.all([
     prisma.question.findMany({
       where,
-      include: { category: true, options: true, _count: { select: { answers: true } } },
-      orderBy: { createdAt: "desc" },
-      take: 100
+      include: {
+        category: true,
+        options: true,
+        tickets: { include: { ticket: true } },
+        _count: { select: { answers: true } }
+      },
+      orderBy: { number: "asc" },
+      take: 200
     }),
-    prisma.category.findMany({ orderBy: { orderIndex: "asc" } }),
+    prisma.category.findMany({ orderBy: { number: "asc" } }),
     prisma.question.count()
   ]);
 
@@ -30,7 +35,7 @@ export default async function AdminQuestionsPage({ searchParams }: { searchParam
     <>
       <AdminTopBar
         title="Savollar bazasi"
-        sub={`${totals} ta savol · ${categories.length} kategoriya · 3 til`}
+        sub={`${totals} ta savol · ${categories.length} mavzu · 3 til`}
         breadcrumbs={[{ label: "Boshqaruv" }, { label: "Savollar" }]}
         actions={
           <Link href="/admin/questions/new" className="btn btn--primary" style={{ fontSize: 13, padding: "9px 14px" }}>
@@ -42,6 +47,7 @@ export default async function AdminQuestionsPage({ searchParams }: { searchParam
         <QuestionsTable
           questions={questions.map((q) => ({
             id: q.id,
+            number: q.number,
             textUz: q.textUz,
             textRu: q.textRu,
             categoryName: q.category?.nameUz || "—",
@@ -51,6 +57,7 @@ export default async function AdminQuestionsPage({ searchParams }: { searchParam
             optionCount: q.options.length,
             correctCount: q.options.filter((o) => o.isCorrect).length,
             answerCount: q._count.answers,
+            tickets: q.tickets.map((t) => ({ id: t.ticketId, number: t.ticket.number })),
             createdAt: q.createdAt.toISOString()
           }))}
           categories={categories}

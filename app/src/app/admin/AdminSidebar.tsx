@@ -6,7 +6,9 @@ import { signOut, useSession } from "next-auth/react";
 
 const ITEMS = [
   { href: "/admin", icon: "◫", label: "Dashboard", exact: true },
+  { href: "/admin/topics", icon: "≡", label: "Mavzular" },
   { href: "/admin/questions", icon: "?", label: "Savollar" },
+  { href: "/admin/tickets", icon: "▦", label: "Biletlar" },
   { href: "/admin/tests", icon: "▤", label: "Testlar" },
   { href: "/admin/signs", icon: "△", label: "Yo'l belgilari" },
   { href: "/admin/users", icon: "◉", label: "Foydalanuvchilar" },

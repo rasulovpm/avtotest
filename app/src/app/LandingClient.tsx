@@ -84,7 +84,7 @@ export default function LandingClient(p: Props) {
       title: L("Mavzular bo'yicha imtihon", "Мавзулар бўйича имтиҳон", "Экзамен по теме"),
       sub: L("Bitta mavzudan 10 ta savol", "Битта мавзудан 10 та савол", "10 вопросов из одной темы"),
       stat: L("Tanlovga o'ting", "Танловга ўтинг", "К выбору темы"),
-      href: "/tests"
+      href: "/tests/test-yhq"
     },
     {
       key: "tickets",
@@ -92,7 +92,7 @@ export default function LandingClient(p: Props) {
       title: L("Biletlar trenirovka", "Билетлар тренировка", "Тренировка по билетам"),
       sub: L("3 ta bilet · har biri 10 savol", "3 та билет · ҳар бири 10 савол", "3 билета · по 10 вопросов"),
       stat: L("Biletlar", "Билетлар", "Билеты"),
-      href: "/tests/ticket-1"
+      href: "/tickets/ticket-1"
     },
     {
       key: "popular-mistakes",
@@ -100,7 +100,7 @@ export default function LandingClient(p: Props) {
       title: L("Ommabop xatoliklar", "Оммабоп хатоликлар", "Популярные ошибки"),
       sub: L("Eng ko'p xato qilingan savollar", "Энг кўп хато қилинган саволлар", "Самые частые ошибки"),
       stat: L("Top savollar", "Топ саволлар", "Топ вопросов"),
-      href: "/tests"
+      href: "/tests/mistakes"
     },
     {
       key: "my-mistakes",
