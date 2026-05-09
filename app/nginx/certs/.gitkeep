@@ -1,0 +1,4 @@
+# Place TLS certificates here when enabling HTTPS:
+#   fullchain.pem
+#   privkey.pem
+# Both files are git-ignored — never commit private keys.
