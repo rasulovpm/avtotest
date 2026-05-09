@@ -5,7 +5,7 @@ import QuestionsTable from "./QuestionsTable";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminQuestionsPage({ searchParams }: { searchParams: { q?: string; cat?: string } }) {
+export default async function AdminQuestionsPage({ searchParams }: { searchParams: { q?: string; cat?: string; page?: string; size?: string } }) {
   const where: any = {};
   if (searchParams.cat) where.categoryId = searchParams.cat;
   if (searchParams.q) {
@@ -15,7 +15,11 @@ export default async function AdminQuestionsPage({ searchParams }: { searchParam
     ];
   }
 
-  const [questions, categories, totals] = await Promise.all([
+  const pageSize = Math.min(Math.max(parseInt(searchParams.size || "100", 10) || 100, 10), 500);
+  const page = Math.max(parseInt(searchParams.page || "1", 10) || 1, 1);
+  const skip = (page - 1) * pageSize;
+
+  const [questions, categories, totals, filteredCount] = await Promise.all([
     prisma.question.findMany({
       where,
       include: {
@@ -25,11 +29,14 @@ export default async function AdminQuestionsPage({ searchParams }: { searchParam
         _count: { select: { answers: true } }
       },
       orderBy: { number: "asc" },
-      take: 200
+      skip,
+      take: pageSize
     }),
     prisma.category.findMany({ orderBy: { number: "asc" } }),
-    prisma.question.count()
+    prisma.question.count(),
+    prisma.question.count({ where })
   ]);
+  const totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
 
   return (
     <>
@@ -64,6 +71,10 @@ export default async function AdminQuestionsPage({ searchParams }: { searchParam
           currentCat={searchParams.cat || ""}
           currentQ={searchParams.q || ""}
           totalCount={totals}
+          filteredCount={filteredCount}
+          currentPage={page}
+          pageSize={pageSize}
+          totalPages={totalPages}
         />
       </div>
     </>
