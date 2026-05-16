@@ -12,7 +12,7 @@ node node_modules/prisma/build/index.js db push --skip-generate --accept-data-lo
 # Optional one-time seed: set RUN_SEED=1 to populate the DB on first boot.
 if [ "${RUN_SEED:-0}" = "1" ]; then
   echo "[entrypoint] RUN_SEED=1 — seeding database..."
-  node node_modules/.bin/tsx prisma/seed.ts || echo "[entrypoint] seed exited non-zero (continuing)"
+  node node_modules/tsx/dist/cli.mjs prisma/seed.ts || echo "[entrypoint] seed exited non-zero (continuing)"
 fi
 
 echo "[entrypoint] Starting: $@"
