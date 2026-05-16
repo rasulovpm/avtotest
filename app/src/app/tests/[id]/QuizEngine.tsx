@@ -7,6 +7,7 @@ import { useLang } from "@/components/lang-provider";
 import { formatTime } from "@/lib/utils";
 import { pickLocalized, pickTitle, type Lang } from "@/lib/i18n";
 import { RoadSignSvg } from "@/components/RoadSignSvg";
+import SaveQuestionButton from "@/components/SaveQuestionButton";
 
 type Q = {
   id: string;
@@ -36,6 +37,7 @@ type Props = {
   passingScore: number;
   questions: Q[];
   mode: "exam" | "training";
+  initialSavedIds?: string[];
 };
 
 export default function QuizEngine(p: Props) {
@@ -367,6 +369,13 @@ export default function QuizEngine(p: Props) {
                         : `✕ Oldingi savol — xato`}
                     </motion.span>
                   )}
+                  <div style={{ marginLeft: "auto" }}>
+                    <SaveQuestionButton
+                      questionId={q.id}
+                      initialSaved={(p.initialSavedIds || []).includes(q.id)}
+                      size="sm"
+                    />
+                  </div>
                 </div>
                 <h2 className="h-display" style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.3, margin: 0 }}>
                   {pickLocalized(q, lang)}

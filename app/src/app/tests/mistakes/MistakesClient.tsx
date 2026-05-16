@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useLang } from "@/components/lang-provider";
 import { pickLocalized } from "@/lib/i18n";
 import { RoadSignSvg } from "@/components/RoadSignSvg";
+import SaveQuestionButton from "@/components/SaveQuestionButton";
 
 type Q = {
   id: string;
@@ -17,6 +18,8 @@ type Q = {
   imageUrl: string | null;
   categoryName: string;
   options: { id: string; textUz: string; textRu: string; textCy: string }[];
+  // "Ommabop xatoliklar" rejimida har savol uchun global statistika
+  globalStats?: { wrongCount: number; totalAttempts: number; wrongPercent: number };
 };
 
 type CheckResult = {
@@ -27,10 +30,14 @@ type CheckResult = {
 
 export default function MistakesClient({
   questions,
-  totalWrongCount
+  totalWrongCount,
+  initialSavedIds,
+  mode = "personal",
 }: {
   questions: Q[];
   totalWrongCount: number;
+  initialSavedIds?: string[];
+  mode?: "personal" | "popular";
 }) {
   const { lang } = useLang();
   const [current, setCurrent] = useState(0);
@@ -79,10 +86,16 @@ export default function MistakesClient({
     <div style={{ padding: 48, color: "var(--fg-0)" }}>
       <div style={{ marginBottom: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
         <div>
-          <div className="overline" style={{ marginBottom: 8 }}>● MASHQ · XATOLARIM</div>
-          <h1 className="h-display h2" style={{ margin: 0 }}>Xatolarni qaytaring</h1>
+          <div className="overline" style={{ marginBottom: 8 }}>
+            ● MASHQ · {mode === "popular" ? "OMMABOP XATOLIKLAR" : "XATOLARIM"}
+          </div>
+          <h1 className="h-display h2" style={{ margin: 0 }}>
+            {mode === "popular" ? "Eng ko'p xato qilingan savollar" : "Xatolarni qaytaring"}
+          </h1>
           <p style={{ color: "var(--fg-1)", margin: "6px 0 0", fontSize: 14 }}>
-            Jami {totalWrongCount} ta xato javob · {questions.length} ta noyob savol bilan mashq qiling
+            {mode === "popular"
+              ? `Foydalanuvchilar tomonidan ko'p xato qilingan top ${questions.length} ta savol`
+              : `Jami ${totalWrongCount} ta xato javob · ${questions.length} ta noyob savol bilan mashq qiling`}
           </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -99,9 +112,30 @@ export default function MistakesClient({
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {q && (
             <motion.div key={q.id} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.18 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 8, flexWrap: "wrap" }}>
                 <div className="overline">SAVOL #{(current + 1).toString().padStart(2, "0")}</div>
-                <span className="chip" style={{ fontSize: 11 }}>{q.categoryName}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  {q.globalStats && (
+                    <span
+                      className="chip"
+                      style={{
+                        fontSize: 11,
+                        background: "color-mix(in oklch, var(--error) 14%, var(--bg-2))",
+                        color: "var(--error)",
+                        borderColor: "color-mix(in oklch, var(--error) 40%, transparent)",
+                      }}
+                      title={`Bu savolga ${q.globalStats.totalAttempts} marta urinishdan ${q.globalStats.wrongCount} tasi xato`}
+                    >
+                      ✕ {q.globalStats.wrongPercent}% xato · {q.globalStats.wrongCount} marta
+                    </span>
+                  )}
+                  <span className="chip" style={{ fontSize: 11 }}>{q.categoryName}</span>
+                  <SaveQuestionButton
+                    questionId={q.id}
+                    initialSaved={(initialSavedIds || []).includes(q.id)}
+                    size="sm"
+                  />
+                </div>
               </div>
               <h2 className="h-display" style={{ fontSize: 24, fontWeight: 600, lineHeight: 1.3, margin: 0 }}>
                 {pickLocalized(q, lang)}

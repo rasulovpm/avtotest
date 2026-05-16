@@ -50,6 +50,13 @@ export default async function TicketQuizPage({
   const total = questions.length;
   const passing = Math.ceil(total * 0.9);
 
+  const userId = (session.user as any).id as string;
+  const saved = await prisma.savedQuestion.findMany({
+    where: { userId, questionId: { in: questions.map((q) => q.id) } },
+    select: { questionId: true },
+  });
+  const initialSavedIds = saved.map((s) => s.questionId);
+
   return (
     <QuizEngine
       testId={`ticket:${ticket.id}`}
@@ -60,6 +67,7 @@ export default async function TicketQuizPage({
       passingScore={passing}
       questions={questions}
       mode={mode}
+      initialSavedIds={initialSavedIds}
     />
   );
 }

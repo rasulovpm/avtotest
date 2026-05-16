@@ -18,12 +18,16 @@ export default async function ResultPage({ params }: { params: { id: string } })
     }
   });
   if (!result || result.userId !== (session.user as any).id) notFound();
+  // Bu sahifa faqat klassik test natijalari uchun (testId mavjud). Mavzu
+  // natijalari /topics sahifasida ko'rsatiladi.
+  if (!result.test || !result.testId) notFound();
+  const testId = result.testId;
 
   // Xato javoblarni topamiz
   const wrongAnswers = await prisma.userAnswer.findMany({
     where: {
       userId: result.userId,
-      testId: result.testId,
+      testId,
       isCorrect: false,
       answeredAt: { gte: new Date(result.completedAt.getTime() - 60 * 60 * 1000) }
     },
@@ -37,7 +41,7 @@ export default async function ResultPage({ params }: { params: { id: string } })
   const allAnswers = await prisma.userAnswer.findMany({
     where: {
       userId: result.userId,
-      testId: result.testId,
+      testId,
       answeredAt: { gte: new Date(result.completedAt.getTime() - 60 * 60 * 1000) }
     },
     include: { question: { include: { category: true } } }
@@ -54,7 +58,7 @@ export default async function ResultPage({ params }: { params: { id: string } })
 
   // 20-savol grid uchun har bir savol uchun ok/wrong (per orderIndex)
   const questionGrid = await prisma.testQuestion.findMany({
-    where: { testId: result.testId },
+    where: { testId },
     orderBy: { orderIndex: "asc" }
   });
   const answerByQ: Record<string, boolean> = {};

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import Header from "@/components/layout/Header";
 import LandingClient from "./LandingClient";
 import GuestLanding from "./GuestLanding";
+import { getOverallProgress } from "@/lib/progress-stats";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +24,7 @@ export default async function HomePage() {
   const [user, mistakesCount, savedCount, recentResults, payments, todayResults, examTest] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
     prisma.userAnswer.count({ where: { userId, isCorrect: false } }),
-    // Saqlanganlar (UserAnswer'da bookmark hali yo'q — keyinroq) — vaqtinchalik 0
-    Promise.resolve(0),
+    prisma.savedQuestion.count({ where: { userId } }),
     prisma.testResult.findMany({
       where: { userId },
       orderBy: { completedAt: "desc" },
@@ -78,6 +78,8 @@ export default async function HomePage() {
     ? Math.max(0, Math.ceil((new Date(planExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 0;
 
+  const overall = await getOverallProgress(userId);
+
   return (
     <>
       <Header />
@@ -86,13 +88,15 @@ export default async function HomePage() {
           name: user?.fullName || (user?.phone || "").slice(0, 8),
           plan: user?.plan || "FREE",
           totalXp: user?.totalXp || 0,
-          planExpiresAt: user?.planExpiresAt?.toISOString() || null
+          planExpiresAt: user?.planExpiresAt?.toISOString() || null,
+          examDate: user?.examDate?.toISOString() || null
         }}
         streak={streak}
         todayResults={todayResults}
         mistakesCount={mistakesCount}
         savedCount={savedCount}
         examTestId={examTest?.id || "test-real-20"}
+        overallProgress={overall}
         subscription={
           isPro
             ? { totalDays, daysLeft, planExpiresAt: planExpiresAt!.toISOString() }

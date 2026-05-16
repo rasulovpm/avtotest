@@ -3,13 +3,15 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useLang } from "@/components/lang-provider";
 import { NeoIcon } from "@/components/NeoIcon";
+import RoadSignsBg from "@/components/RoadSignsBg";
 
 export default function GuestLanding() {
   const { lang } = useLang();
   const L = (uz: string, cy: string, ru: string) => (lang === "ru" ? ru : lang === "cy" ? cy : uz);
 
   return (
-    <main style={{ background: "var(--bg-0)", color: "var(--fg-0)", minHeight: "100vh", fontFamily: "var(--font-body)" }}>
+    <main style={{ background: "var(--bg-0)", color: "var(--fg-0)", minHeight: "100vh", fontFamily: "var(--font-body)", position: "relative", isolation: "isolate" }}>
+      <RoadSignsBg />
       <section style={{ padding: "48px 48px 24px" }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}

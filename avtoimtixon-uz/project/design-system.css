@@ -15,13 +15,13 @@
   --warning: oklch(0.86 0.16 85);
   --info:    var(--accent);
 
-  /* ── Surfaces (dark) ───────────────────────────────────── */
-  --bg-0: oklch(0.14 0.012 250);           /* page bg */
-  --bg-1: oklch(0.18 0.014 250);           /* card */
-  --bg-2: oklch(0.22 0.016 250);           /* card hover / elevated */
-  --bg-3: oklch(0.28 0.018 250);           /* deeper elevated */
-  --line: oklch(0.30 0.012 250 / 0.6);     /* hairline border */
-  --line-2: oklch(0.40 0.012 250 / 0.7);
+  /* ── Surfaces (dark — softer / less harsh) ───────────── */
+  --bg-0: oklch(0.21 0.014 250);           /* page bg — lifted from 0.14 */
+  --bg-1: oklch(0.25 0.016 250);           /* card */
+  --bg-2: oklch(0.30 0.018 250);           /* card hover / elevated */
+  --bg-3: oklch(0.36 0.020 250);           /* deeper elevated */
+  --line: oklch(0.40 0.014 250 / 0.55);    /* hairline border */
+  --line-2: oklch(0.50 0.014 250 / 0.65);
 
   /* ── Text ─────────────────────────────────────────────── */
   --fg-0: oklch(0.97 0.005 250);           /* primary text */

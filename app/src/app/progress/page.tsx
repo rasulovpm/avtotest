@@ -18,7 +18,7 @@ export default async function ProgressPage() {
       where: { userId },
       orderBy: { completedAt: "desc" },
       take: 30,
-      include: { test: true }
+      include: { test: true, category: true }
     }),
     prisma.userAnswer.findMany({
       where: { userId },
@@ -132,9 +132,9 @@ export default async function ProgressPage() {
             id: r.id,
             score: r.score,
             passed: r.passed,
-            titleUz: r.test.titleUz,
-            titleRu: r.test.titleRu,
-            titleCy: r.test.titleCy,
+            titleUz: r.test?.titleUz ?? r.category?.nameUz ?? "Test",
+            titleRu: r.test?.titleRu ?? r.category?.nameRu ?? "Тест",
+            titleCy: r.test?.titleCy ?? r.category?.nameCy ?? "Тест",
             completedAt: r.completedAt.toISOString()
           }))}
           categoryStats={Object.values(catStats)}

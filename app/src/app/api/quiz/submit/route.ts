@@ -11,7 +11,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "bad_request" }, { status: 400 });
     }
 
-    // Tickets — alohida ko'rib chiqamiz
+    // Tickets — javoblar ALOHIDA `ticketAnswer` jadvaliga yoziladi; bilet
+    // natijasi faqat shu jadval orqali hisoblanadi (real imtihon/mavzu
+    // testidagi javoblar bilet natijasiga ta'sir qilmaydi).
     if (typeof testId === "string" && testId.startsWith("ticket:")) {
       const ticketId = testId.slice("ticket:".length);
       const ticket = await prisma.ticket.findUnique({
@@ -26,7 +28,7 @@ export async function POST(req: NextRequest) {
       if (!ticket) return NextResponse.json({ error: "ticket_not_found" }, { status: 404 });
 
       let correct = 0;
-      const ua: any[] = [];
+      const ta: any[] = [];
       for (const tq of ticket.questions) {
         const q = tq.question;
         const selectedOptionId = (answers as any)[q.id] as string | undefined;
@@ -34,17 +36,16 @@ export async function POST(req: NextRequest) {
         const isCorrect = !!selectedOptionId && selectedOptionId === correctOpt?.id;
         if (isCorrect) correct++;
         if (selectedOptionId) {
-          ua.push({
+          ta.push({
             userId: user.id,
+            ticketId: ticket.id,
             questionId: q.id,
-            testId: null,
             selectedOptionId,
             isCorrect,
-            timeSpentSeconds: 0
           });
         }
       }
-      if (ua.length) await prisma.userAnswer.createMany({ data: ua });
+      if (ta.length) await prisma.ticketAnswer.createMany({ data: ta });
       const total = ticket.questions.length;
       const xpGain = correct * 3;
       if (xpGain > 0) {

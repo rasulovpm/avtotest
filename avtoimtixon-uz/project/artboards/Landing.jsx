@@ -63,49 +63,43 @@ function Landing({ t, accent, lang = 'uz', forceContact = false }) {
         </div>
       </header>
 
-      {/* ── Compact Hero (one-liner welcome + primary CTA) ─ */}
-      <section style={{ padding: '24px 48px 16px' }}>
-        <div className="bento" style={{
-          padding: '22px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24,
-          background: `radial-gradient(80% 100% at 100% 0%, color-mix(in oklch, var(--accent) 18%, transparent), transparent 65%), var(--bg-1)`,
+      {/* ── Hero: one big primary CTA ─────────────────────── */}
+      <section style={{ padding: '24px 48px 12px' }}>
+        <div style={{
+          padding: '24px 32px', borderRadius: 18,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20,
+          background: 'linear-gradient(135deg, color-mix(in oklch, var(--accent) 18%, var(--bg-1)) 0%, var(--bg-1) 60%)',
+          border: '1px solid color-mix(in oklch, var(--accent) 30%, var(--line))',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-            <div style={{ width: 52, height: 52, borderRadius: 14, background: 'color-mix(in oklch, var(--accent) 22%, var(--bg-2))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <NeoIcon name="rocket" size={26} />
-            </div>
-            <div>
-              <div className="overline" style={{ marginBottom: 4 }}>● {L('XUSH KELIBSIZ', 'ХУШ КЕЛИБСИЗ', 'ДОБРО ПОЖАЛОВАТЬ')}, AZIZ</div>
-              <div style={{ fontSize: 18, fontWeight: 600, fontFamily: 'var(--font-display)' }}>
-                {L("Bugun ham mashqni davom ettiring — 12 kunlik streak.", 'Бугун ҳам машқни давом эттиринг — 12 кунлик streak.', 'Продолжайте тренировку — серия 12 дней.')}
-              </div>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', letterSpacing: '0.12em' }}>{L('XUSH KELIBSIZ, AZIZ', 'ХУШ КЕЛИБСИЗ, АЗИЗ', 'ПРИВЕТ, AZIZ')}</div>
+            <span className="chip" style={{ fontSize: 11, padding: '4px 9px' }}>🔥 12 {L('kun', 'кун', 'дн')}</span>
+            <span className="chip" style={{ fontSize: 11, padding: '4px 9px' }}>📊 1 250 XP</span>
           </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <span className="chip mono" style={{ fontSize: 11, padding: '6px 10px' }}>🔥 12 {L('kun', 'кун', 'дн')}</span>
-            <span className="chip mono" style={{ fontSize: 11, padding: '6px 10px' }}>📊 1 250 XP</span>
-            <button className="btn btn--primary" style={{ fontSize: 14 }}>▶ {L('Imtihonni boshlash', 'Имтиҳонни бошлаш', 'Начать экзамен')}</button>
-          </div>
+          <button className="btn btn--primary" style={{ fontSize: 15, padding: '13px 26px' }}>
+            ▶ {L('Real imtihonni boshlash', 'Реал имтиҳонни бошлаш', 'Начать реальный экзамен')}
+          </button>
         </div>
       </section>
 
-      {/* ── 8 quick-action cards ─────────────────────────── */}
-      <section style={{ padding: '8px 48px 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <h2 className="h-display" style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>
-            {L('Boshlash uchun rejim tanlang', 'Бошлаш учун режим танланг', 'Выберите режим')}
+      {/* ── 8 sections — compact grid ─────────────────────── */}
+      <section style={{ padding: '12px 48px 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
+          <h2 className="h-display" style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
+            {L("Boʻlimlar", 'Бўлимлар', 'Разделы')}
           </h2>
           <span className="overline" style={{ color: 'var(--fg-2)' }}>{L('8 BOʻLIM', '8 БЎЛИМ', '8 РАЗДЕЛОВ')}</span>
         </div>
 
-        {/* Top: 2 big — Real 20 + Real 50 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+        {/* Row 1: 2 primary (Real 20, Real 50) */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           {cards.filter(c => c.big).map((c) => (
             <ActionCard key={c.key} card={c} big lang={lang} L={L} />
           ))}
         </div>
 
-        {/* Bottom: 6 smaller cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+        {/* Row 2-3: 6 compact cards (3-col) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
           {cards.filter(c => !c.big).map((c) => (
             <ActionCard key={c.key} card={c} lang={lang} L={L} />
           ))}
@@ -241,50 +235,55 @@ function Landing({ t, accent, lang = 'uz', forceContact = false }) {
   );
 }
 
-// ── Quick-action card with neon icon ───────────────────────────
+// ── Quick-action card — compact, action-first, no heavy glow ───
 function ActionCard({ card, big, lang, L }) {
-  const accentBg = card.accent
-    ? 'radial-gradient(80% 100% at 100% 0%, color-mix(in oklch, var(--accent) 22%, transparent), transparent 60%), var(--bg-1)'
-    : undefined;
+  const tintColor = card.tone === 'error' ? 'var(--error)' : card.tone === 'lime' ? 'var(--success)' : 'var(--accent)';
   return (
-    <button className={"bento" + (card.accent ? ' bento--accent' : '')} style={{
-      padding: big ? 26 : 22,
+    <button style={{
+      padding: big ? '18px 22px' : '16px 18px',
+      borderRadius: 14, border: '1px solid var(--line)',
+      background: card.accent
+        ? 'linear-gradient(135deg, color-mix(in oklch, var(--accent) 14%, var(--bg-1)) 0%, var(--bg-1) 70%)'
+        : 'var(--bg-1)',
       textAlign: 'left', cursor: 'pointer', font: 'inherit', color: 'inherit',
-      display: 'flex', flexDirection: 'column', gap: big ? 14 : 12,
-      background: accentBg, position: 'relative', overflow: 'hidden',
-      transition: 'transform .2s, border-color .2s',
+      display: 'flex', alignItems: 'center', gap: big ? 16 : 14,
+      position: 'relative', overflow: 'hidden',
+      transition: 'transform .15s, border-color .15s, background .15s',
     }}
-    onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
+    onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.borderColor = 'color-mix(in oklch, ' + tintColor + ' 50%, var(--line))'; }}
     onMouseLeave={(e) => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = ''; }}>
-      {card.accent && (
-        <span className="chip" style={{ position: 'absolute', top: 16, right: 16, background: 'var(--accent)', color: '#0a1f24', borderColor: 'var(--accent)', fontSize: 10, fontWeight: 700 }}>
-          ● {lang === 'ru' ? 'РЕКОМЕНДУЕМ' : lang === 'cy' ? 'ТАВСИЯ' : 'TAVSIYA'}
-        </span>
-      )}
-      <div style={{ display: 'flex', alignItems: 'center', gap: big ? 16 : 12 }}>
-        <div style={{
-          width: big ? 56 : 46, height: big ? 56 : 46, borderRadius: 14,
-          background: card.tone === 'error' ? 'color-mix(in oklch, var(--error) 18%, var(--bg-2))'
-            : card.tone === 'lime' ? 'color-mix(in oklch, var(--success) 18%, var(--bg-2))'
-            : 'color-mix(in oklch, var(--accent) 18%, var(--bg-2))',
-          border: '1px solid ' + (card.tone === 'error' ? 'color-mix(in oklch, var(--error) 40%, transparent)'
-            : card.tone === 'lime' ? 'color-mix(in oklch, var(--success) 40%, transparent)'
-            : 'color-mix(in oklch, var(--accent) 40%, transparent)'),
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 20px color-mix(in oklch, ' + (card.tone === 'error' ? 'var(--error)' : card.tone === 'lime' ? 'var(--success)' : 'var(--accent)') + ' 22%, transparent)',
-        }}>
-          <NeoIcon name={card.icon} size={big ? 26 : 22} tone={card.tone} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <div className="h-display" style={{ fontSize: big ? 20 : 16, fontWeight: 600, lineHeight: 1.25 }}>{card.title}</div>
-        </div>
+      {/* Icon — small, no glow */}
+      <div style={{
+        width: big ? 48 : 40, height: big ? 48 : 40, borderRadius: 10,
+        background: 'color-mix(in oklch, ' + tintColor + ' 14%, var(--bg-2))',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+        <NeoIcon name={card.icon} size={big ? 22 : 18} tone={card.tone} />
       </div>
-      <p style={{ margin: 0, fontSize: big ? 14 : 12.5, color: 'var(--fg-1)', lineHeight: 1.5 }}>{card.sub}</p>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
-        <span className={"chip " + (card.tone === 'error' ? 'chip--error' : card.tone === 'lime' ? 'chip--lime' : '')} style={{ fontSize: 11, padding: '5px 10px' }}>
+
+      {/* Title + subtitle */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+          <div className="h-display" style={{ fontSize: big ? 18 : 15, fontWeight: 600, lineHeight: 1.2 }}>{card.title}</div>
+          {card.accent && (
+            <span style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', padding: '2px 6px', borderRadius: 4,
+              background: 'var(--accent)', color: '#0a1f24',
+            }}>{lang === 'ru' ? 'РЕК.' : lang === 'cy' ? 'ТВС.' : 'TVS.'}</span>
+          )}
+        </div>
+        <p style={{ margin: 0, fontSize: big ? 13 : 12, color: 'var(--fg-2)', lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {card.sub}
+        </p>
+      </div>
+
+      {/* Stat + arrow */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <span className="mono" style={{ fontSize: 11, color: card.tone === 'error' ? 'var(--error)' : card.tone === 'lime' ? 'var(--success)' : 'var(--fg-1)', fontWeight: 600 }}>
           {card.stat}
         </span>
-        <span style={{ color: 'var(--accent)', fontSize: 14, fontWeight: 600 }}>→</span>
+        <span style={{ color: 'var(--fg-2)', fontSize: 16, fontWeight: 500 }}>→</span>
       </div>
     </button>
   );

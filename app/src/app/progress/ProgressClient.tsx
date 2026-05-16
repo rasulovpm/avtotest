@@ -29,12 +29,6 @@ export default function ProgressClient(p: Props) {
   const { t, lang } = useLang();
   const [range, setRange] = useState<"week" | "month">("week");
 
-  const level = p.totalXp >= 1000 ? "PLATINA" : p.totalXp >= 500 ? "OLTIN" : p.totalXp >= 100 ? "KUMUSH" : "BRONZA";
-  const nextLevel = level === "PLATINA" ? "DIAMOND" : level === "OLTIN" ? "PLATINA" : level === "KUMUSH" ? "OLTIN" : "KUMUSH";
-  const levelMax = level === "PLATINA" ? 5000 : level === "OLTIN" ? 1000 : level === "KUMUSH" ? 500 : 100;
-  const levelMin = level === "OLTIN" ? 500 : level === "KUMUSH" ? 100 : level === "BRONZA" ? 0 : 1000;
-  const progressInLevel = ((p.totalXp - levelMin) / (levelMax - levelMin)) * 100;
-
   const data = range === "week" ? p.weekDays : p.monthDays;
   const max = Math.max(1, ...data.map((x) => x.q));
   const total = data.reduce((s, x) => s + x.q, 0);
@@ -62,7 +56,7 @@ export default function ProgressClient(p: Props) {
         <h1 className="h-display h2" style={{ margin: 0 }}>{t.progress.title}</h1>
       </div>
 
-      <div className="lg-grid-3" style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr)", gap: 16, marginBottom: 16 }}>
+      <div className="lg-grid-3" style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr)", gap: 16, marginBottom: 16 }}>
         {/* Bar chart */}
         <div className="bento" style={{ padding: 28, height: 320, display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
@@ -191,22 +185,6 @@ export default function ProgressClient(p: Props) {
           </div>
         </div>
 
-        {/* Level */}
-        <div className="bento" style={{ padding: 28, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-          <div>
-            <div className="overline" style={{ marginBottom: 8 }}>🏆 DARAJA</div>
-            <div className="h-display" style={{ fontSize: 28, fontWeight: 600, color: "var(--accent)" }}>{level}</div>
-            <div className="mono" style={{ fontSize: 13, color: "var(--fg-2)", marginTop: 4 }}>{p.totalXp} XP</div>
-          </div>
-          <div>
-            <div className="progress" style={{ marginBottom: 6 }}>
-              <span style={{ width: Math.min(100, Math.max(0, progressInLevel)) + "%" }} />
-            </div>
-            <div style={{ fontSize: 11, color: "var(--fg-2)" }}>
-              Keyingi: <span className="mono">{nextLevel}</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="lg-grid-2" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.6fr)", gap: 16, marginBottom: 16 }}>

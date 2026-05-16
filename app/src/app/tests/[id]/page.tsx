@@ -68,6 +68,13 @@ export default async function QuizPage({
   // Default rejim — exam (real imtihon). ?mode=training bo'lsa training rejim.
   const mode = searchParams.mode === "training" ? "training" : "exam";
 
+  const userId = (session.user as any).id as string;
+  const saved = await prisma.savedQuestion.findMany({
+    where: { userId, questionId: { in: questionRows.map((q) => q.id) } },
+    select: { questionId: true },
+  });
+  const initialSavedIds = saved.map((s) => s.questionId);
+
   return (
     <QuizEngine
       testId={test.id}
@@ -78,6 +85,7 @@ export default async function QuizPage({
       passingScore={test.passingScore}
       questions={questionRows}
       mode={mode}
+      initialSavedIds={initialSavedIds}
     />
   );
 }
