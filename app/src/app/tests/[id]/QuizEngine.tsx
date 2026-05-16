@@ -189,7 +189,7 @@ export default function QuizEngine(p: Props) {
     : null;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-0)", color: "var(--fg-0)", display: "flex", flexDirection: "column", fontFamily: "var(--font-body)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-0)", color: "var(--fg-0)", display: "flex", flexDirection: "column", fontFamily: "var(--font-body)", width: "100%", maxWidth: "var(--shell-max)", marginInline: "auto" }}>
       {/* Header */}
       <header
         style={{

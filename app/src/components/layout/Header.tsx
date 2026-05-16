@@ -39,16 +39,22 @@ export default function Header() {
     <>
       <header
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "16px 24px",
           borderBottom: "1px solid var(--line)",
           background: "color-mix(in oklch, var(--bg-0) 70%, transparent)",
           backdropFilter: "blur(16px)",
           position: "sticky",
           top: 0,
-          zIndex: 30,
+          zIndex: 30
+        }}
+      >
+      <div
+        className="shell"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingTop: 16,
+          paddingBottom: 16,
           gap: 12
         }}
       >
@@ -168,6 +174,7 @@ export default function Header() {
             ☰
           </button>
         </div>
+      </div>
       </header>
 
       {/* Mobile drawer */}
