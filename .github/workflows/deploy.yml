@@ -1,0 +1,74 @@
+name: Deploy to production
+
+on:
+  push:
+    branches: [main]
+    # Faqat shu yo'llar o'zgarganda deploy qilamiz — bu noaniq commit'lar
+    # uchun deploy'ni o'tkazib yuboradi (masalan, faqat README o'zgarganda).
+    paths:
+      - "app/**"
+      - ".github/workflows/deploy.yml"
+  # Manual ishga tushirish — GitHub Actions sahifasidan "Run workflow"
+  workflow_dispatch:
+
+# Bir vaqtda faqat bitta deploy ishlasin — eski ishni bekor qilmaymiz, navbatga
+# qo'yamiz (concurrent bo'lsa, ikkitasi parallel git pull qilib chigallashishi
+# mumkin).
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: SSH + git pull + restart
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Show context
+        run: |
+          echo "Commit: ${{ github.sha }}"
+          echo "Actor:  ${{ github.actor }}"
+          echo "Branch: ${{ github.ref_name }}"
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          # 10 daqiqa — image build muddati uchun
+          command_timeout: 10m
+          script_stop: true
+          script: |
+            set -e
+            echo ">>> $(date '+%F %T')  Deploy boshlanmoqda"
+            cd /opt/avtoimtixon
+
+            echo ">>> git pull"
+            git pull --ff-only
+
+            cd app
+            chmod +x deploy.sh docker-entrypoint.sh
+
+            echo ">>> docker compose build + up"
+            ./deploy.sh restart
+
+            echo ">>> Container holati:"
+            docker compose -f docker-compose.prod.yml ps
+
+            echo ">>> Healthcheck (max 60s)"
+            for i in $(seq 1 12); do
+              status=$(docker inspect --format='{{.State.Health.Status}}' avtoimtixon-app 2>/dev/null || echo "unknown")
+              echo "  [$i] app health: $status"
+              if [ "$status" = "healthy" ]; then
+                echo ">>> ✔ Deploy muvaffaqiyatli"
+                exit 0
+              fi
+              sleep 5
+            done
+
+            echo ">>> ✗ App healthy bo'lmadi — oxirgi loglar:"
+            docker compose -f docker-compose.prod.yml logs --tail=80 app
+            exit 1
