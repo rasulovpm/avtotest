@@ -41,22 +41,20 @@ type Dump = {
   }
   const data = JSON.parse(fs.readFileSync(src, "utf8")) as Dump;
 
-  console.log("=== 1. Kategoriyalarni upsert qilish ===");
+  console.log("=== 1. Eski kategoriyalarni tozalash ===");
+  // Question.categoryId va Test.categoryId — onDelete: SetNull, demak
+  // savol va testlar yo'qolmaydi, faqat categoryId null bo'ladi (keyin
+  // qaytadan o'rnatamiz).
+  const oldDel = await prisma.category.deleteMany({});
+  console.log(`  ✔ ${oldDel.count} ta eski kategoriya o'chirildi`);
+
+  console.log("\n=== 2. Yangi 42 kategoriyani yaratish ===");
   const idBySlug = new Map<string, string>();
   for (const c of data.categories) {
-    const upserted = await prisma.category.upsert({
-      where: { slug: c.slug },
-      update: {
-        number: c.number,
-        nameUz: c.nameUz, nameRu: c.nameRu, nameCy: c.nameCy,
-        icon: c.icon, color: c.color, description: c.description,
-        orderIndex: c.orderIndex,
-      },
-      create: c,
-    });
-    idBySlug.set(c.slug, upserted.id);
+    const created = await prisma.category.create({ data: c });
+    idBySlug.set(c.slug, created.id);
   }
-  console.log(`  ✔ ${data.categories.length} ta kategoriya yangilandi`);
+  console.log(`  ✔ ${data.categories.length} ta kategoriya yaratildi`);
 
   // Slug -> id, number -> id, ikkalasini ham tayyorlaymiz
   const idByNumber = new Map<number, string>();
@@ -65,7 +63,7 @@ type Dump = {
     if (id) idByNumber.set(c.number, id);
   }
 
-  console.log("\n=== 2. Savollarni kategoriyalarga bog'lash ===");
+  console.log("\n=== 3. Savollarni kategoriyalarga bog'lash ===");
   let updated = 0, missing = 0;
   for (const [qNumber, catNumber] of data.questionToCategory) {
     const catId = idByNumber.get(catNumber);
@@ -82,7 +80,7 @@ type Dump = {
     console.log(`  ⚠  ${missing} ta savol topilmadi (bazada hali yo'q bo'lishi mumkin)`);
   }
 
-  console.log("\n=== 3. Yakuniy holat ===");
+  console.log("\n=== 4. Yakuniy holat ===");
   const totalCat = await prisma.category.count();
   const totalQ = await prisma.question.count();
   const withCat = await prisma.question.count({ where: { categoryId: { not: null } } });
