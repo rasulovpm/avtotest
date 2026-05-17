@@ -423,13 +423,15 @@ const SIGNS = [
 async function main() {
   console.log("🌱 Seeding...");
 
-  // Categories
+  // Categories (mavzular) — har biriga raqamli ID beriladi
   const cats: Record<string, string> = {};
-  for (const c of CATEGORIES) {
+  for (let i = 0; i < CATEGORIES.length; i++) {
+    const c = CATEGORIES[i];
+    const data = { ...c, number: i + 1 };
     const created = await prisma.category.upsert({
       where: { slug: c.slug },
-      update: c,
-      create: c
+      update: data,
+      create: data
     });
     cats[c.slug] = created.id;
   }
@@ -467,13 +469,14 @@ async function main() {
     });
   }
 
-  // Questions + options (asosiy 20 + qo'shimcha 20 = 40)
+  // Questions + options (asosiy 20 + qo'shimcha 20 = 40) — har biriga ketma-ket raqamli ID
   const allQuestions = [...QUESTIONS, ...EXTRA_QUESTIONS];
   const questionIds: string[] = [];
   for (let i = 0; i < allQuestions.length; i++) {
     const q = allQuestions[i];
     const created = await prisma.question.create({
       data: {
+        number: i + 1,
         categoryId: cats[q.cat],
         textUz: q.textUz,
         textRu: q.textRu,
@@ -496,10 +499,16 @@ async function main() {
     questionIds.push(created.id);
   }
 
-  // Tests — Real imtihon 20
-  const realExam = await prisma.test.upsert({
+  // Tests — Real imtihon 20 (RANDOM_BY_TOPIC: har gal mavzu nisbatiga ko'ra random)
+  await prisma.test.upsert({
     where: { id: "test-real-20" },
-    update: {},
+    update: {
+      questionCount: 20,
+      timeLimitMinutes: 25,
+      passingScore: 18,
+      generationMode: "RANDOM_BY_TOPIC",
+      isExamSimulation: true
+    },
     create: {
       id: "test-real-20",
       titleUz: "Real imtihon — 20 savol",
@@ -509,14 +518,21 @@ async function main() {
       timeLimitMinutes: 25,
       passingScore: 18,
       isExamSimulation: true,
+      generationMode: "RANDOM_BY_TOPIC",
       orderIndex: 1
     }
   });
 
-  // Real imtihon 50 — chuqur tayyorgarlik
-  const realExam50 = await prisma.test.upsert({
+  // Real imtihon 50 — RANDOM_BY_TOPIC ham
+  await prisma.test.upsert({
     where: { id: "test-real-50" },
-    update: {},
+    update: {
+      questionCount: 50,
+      timeLimitMinutes: 50,
+      passingScore: 45,
+      generationMode: "RANDOM_BY_TOPIC",
+      isExamSimulation: true
+    },
     create: {
       id: "test-real-50",
       titleUz: "Real imtihon — 50 savol",
@@ -526,54 +542,33 @@ async function main() {
       timeLimitMinutes: 50,
       passingScore: 45,
       isExamSimulation: true,
+      generationMode: "RANDOM_BY_TOPIC",
       orderIndex: 2
     }
   });
 
-  // Bind first 20 questions to the real exam
-  for (let i = 0; i < Math.min(20, questionIds.length); i++) {
-    await prisma.testQuestion.upsert({
-      where: { testId_questionId: { testId: realExam.id, questionId: questionIds[i] } },
-      update: { orderIndex: i },
-      create: { testId: realExam.id, questionId: questionIds[i], orderIndex: i }
-    });
-  }
-
-  // Bind all available questions (gacha 50) to real-50 exam — past 40, qaytariladi
-  for (let i = 0; i < 50; i++) {
-    const qId = questionIds[i % questionIds.length];
-    await prisma.testQuestion.upsert({
-      where: { testId_questionId: { testId: realExam50.id, questionId: qId } },
-      update: { orderIndex: i },
-      create: { testId: realExam50.id, questionId: qId, orderIndex: i }
-    });
-  }
-
-  // Bilet'lar (3 ta tezkor bilet, har biri 10 savol)
+  // Demo biletlar (yangi Ticket modeli) — 3 ta sample, har biri 10 ta savol
   for (let n = 1; n <= 3; n++) {
-    const ticket = await prisma.test.upsert({
-      where: { id: `ticket-${n}` },
-      update: {},
+    const ticketId = `ticket-${n}`;
+    const ticket = await prisma.ticket.upsert({
+      where: { id: ticketId },
+      update: { number: n },
       create: {
-        id: `ticket-${n}`,
+        id: ticketId,
+        number: n,
         titleUz: `Bilet #${n}`,
         titleRu: `Билет №${n}`,
         titleCy: `Билет №${n}`,
-        questionCount: 10,
-        timeLimitMinutes: 12,
-        passingScore: 9,
-        isExamSimulation: false,
-        orderIndex: 10 + n
+        orderIndex: n
       }
     });
-    // Har biletga 10 ta savol (tasodifiy bilan kombinatsiya — slice'lar)
+    // Eski bog'lanishlarni tozalab qaytadan biriktirish
+    await prisma.ticketQuestion.deleteMany({ where: { ticketId: ticket.id } });
     const offset = (n - 1) * 7;
     for (let i = 0; i < 10; i++) {
       const qId = questionIds[(offset + i) % questionIds.length];
-      await prisma.testQuestion.upsert({
-        where: { testId_questionId: { testId: ticket.id, questionId: qId } },
-        update: { orderIndex: i },
-        create: { testId: ticket.id, questionId: qId, orderIndex: i }
+      await prisma.ticketQuestion.create({
+        data: { ticketId: ticket.id, questionId: qId, orderIndex: i }
       });
     }
   }

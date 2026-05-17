@@ -18,12 +18,16 @@ export default async function ResultPage({ params }: { params: { id: string } })
     }
   });
   if (!result || result.userId !== (session.user as any).id) notFound();
+  // Bu sahifa faqat klassik test natijalari uchun (testId mavjud). Mavzu
+  // natijalari /topics sahifasida ko'rsatiladi.
+  if (!result.test || !result.testId) notFound();
+  const testId = result.testId;
 
   // Xato javoblarni topamiz
   const wrongAnswers = await prisma.userAnswer.findMany({
     where: {
       userId: result.userId,
-      testId: result.testId,
+      testId,
       isCorrect: false,
       answeredAt: { gte: new Date(result.completedAt.getTime() - 60 * 60 * 1000) }
     },
@@ -37,7 +41,7 @@ export default async function ResultPage({ params }: { params: { id: string } })
   const allAnswers = await prisma.userAnswer.findMany({
     where: {
       userId: result.userId,
-      testId: result.testId,
+      testId,
       answeredAt: { gte: new Date(result.completedAt.getTime() - 60 * 60 * 1000) }
     },
     include: { question: { include: { category: true } } }
@@ -52,10 +56,22 @@ export default async function ResultPage({ params }: { params: { id: string } })
     if (a.isCorrect) catStats[c.id].correct++;
   }
 
+  // 20-savol grid uchun har bir savol uchun ok/wrong (per orderIndex)
+  const questionGrid = await prisma.testQuestion.findMany({
+    where: { testId },
+    orderBy: { orderIndex: "asc" }
+  });
+  const answerByQ: Record<string, boolean> = {};
+  for (const a of allAnswers) answerByQ[a.questionId] = a.isCorrect;
+  const grid = questionGrid.map((tq) => ({
+    qid: tq.questionId,
+    correct: answerByQ[tq.questionId] ?? null
+  }));
+
   return (
     <>
       <Header />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+      <main style={{ background: "var(--bg-0)", minHeight: "100vh" }}>
         <ResultsClient
           result={{
             id: result.id,
@@ -78,6 +94,7 @@ export default async function ResultPage({ params }: { params: { id: string } })
             questionCy: a.question.textCy
           }))}
           categoryStats={Object.values(catStats)}
+          grid={grid}
         />
       </main>
       <Footer />

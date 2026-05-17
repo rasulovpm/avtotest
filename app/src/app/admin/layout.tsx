@@ -23,7 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-0)", color: "var(--fg-0)", display: "flex", fontFamily: "var(--font-body)" }}>
       <AdminSidebar />
-      <main style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>{children}</main>
+      <main className="no-shell" style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>{children}</main>
     </div>
   );
 }

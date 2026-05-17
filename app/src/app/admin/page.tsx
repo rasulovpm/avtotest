@@ -22,7 +22,7 @@ export default async function AdminDashboard() {
     prisma.roadSign.count(),
     prisma.payment.count({ where: { status: "PENDING" } }),
     prisma.payment.count({ where: { status: "ACTIVE" } }),
-    prisma.testResult.findMany({ take: 6, orderBy: { completedAt: "desc" }, include: { user: true, test: true } }),
+    prisma.testResult.findMany({ take: 6, orderBy: { completedAt: "desc" }, include: { user: true, test: true, category: true } }),
     prisma.user.findMany({ take: 6, orderBy: { createdAt: "desc" } }),
     prisma.testResult.findMany({
       where: { completedAt: { gte: new Date(Date.now() - 12 * 30 * 24 * 60 * 60 * 1000) } },
@@ -144,7 +144,7 @@ export default async function AdminDashboard() {
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {[...recentResults.slice(0, 3).map((r) => ({
                 who: r.user.fullName || r.user.phone,
-                what: `${r.test.titleUz} · ${r.correctCount}/${r.totalQuestions}`,
+                what: `${r.test?.titleUz ?? r.category?.nameUz ?? "Test"} · ${r.correctCount}/${r.totalQuestions}`,
                 when: relTime(r.completedAt),
                 tag: r.passed ? "pass" : "fail"
               })),

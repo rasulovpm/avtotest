@@ -28,13 +28,18 @@ model User {
   streakCount   Int       @default(0)
   totalXp       Int       @default(0)
   preferredLang String    @default("uz")
+  // Foydalanuvchi rejalashtirgan imtihon kuni (ixtiyoriy). Bosh sahifa countdown'i shu sanaga asoslanadi.
+  examDate      DateTime?
   createdAt     DateTime  @default(now())
   lastActiveAt  DateTime  @default(now())
 
   answers     UserAnswer[]
+  topicAnswers TopicAnswer[]
+  ticketAnswers TicketAnswer[]
   results     TestResult[]
   payments    Payment[]
   otpCodes    OtpCode[]
+  savedQuestions SavedQuestion[]
 }
 
 model OtpCode {
@@ -53,6 +58,7 @@ model OtpCode {
 
 model Category {
   id          String  @id @default(cuid())
+  number      Int     @unique
   slug        String  @unique
   nameUz      String
   nameRu      String
@@ -62,8 +68,10 @@ model Category {
   description String?
   orderIndex  Int     @default(0)
 
-  tests     Test[]
-  questions Question[]
+  tests        Test[]
+  questions    Question[]
+  results      TestResult[]
+  topicAnswers TopicAnswer[]
 }
 
 model Test {
@@ -79,6 +87,8 @@ model Test {
   isExamSimulation  Boolean    @default(false)
   isPublished       Boolean    @default(true)
   orderIndex        Int        @default(0)
+  // MANUAL — testQuestion'lar orqali bog'langan; RANDOM_BY_TOPIC — har gal mavzu nisbati bo'yicha tasodifiy tanlanadi
+  generationMode    String     @default("MANUAL")
   createdAt         DateTime   @default(now())
 
   category  Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -89,6 +99,7 @@ model Test {
 
 model Question {
   id              String     @id @default(cuid())
+  number          Int        @unique
   categoryId      String?
   textUz          String
   textRu          String
@@ -107,6 +118,38 @@ model Question {
   options  Option[]
   tests    TestQuestion[]
   answers  UserAnswer[]
+  topicAnswers TopicAnswer[]
+  ticketAnswers TicketAnswer[]
+  tickets  TicketQuestion[]
+  savedBy  SavedQuestion[]
+}
+
+model Ticket {
+  id          String   @id @default(cuid())
+  number      Int      @unique
+  titleUz     String
+  titleRu     String
+  titleCy     String
+  description String?
+  isPublished Boolean  @default(true)
+  orderIndex  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questions TicketQuestion[]
+  answers   TicketAnswer[]
+}
+
+model TicketQuestion {
+  ticketId   String
+  questionId String
+  orderIndex Int    @default(0)
+
+  ticket   Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([ticketId, questionId])
+  @@index([questionId])
 }
 
 model Option {
@@ -154,7 +197,9 @@ model UserAnswer {
 model TestResult {
   id               String   @id @default(cuid())
   userId           String
-  testId           String
+  // Test natijasi uchun: bitta testId, yoki kategoriya bo'yicha — categoryId. Ikkalasi ham bo'lishi mumkin.
+  testId           String?
+  categoryId       String?
   score            Int
   totalQuestions   Int
   correctCount     Int
@@ -162,10 +207,70 @@ model TestResult {
   passed           Boolean  @default(false)
   completedAt      DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  test Test @relation(fields: [testId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  test     Test?     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@index([userId, completedAt])
+  @@index([userId, categoryId, completedAt])
+}
+
+// Bilet ichida (/tickets/[id]) berilgan javoblar. Real imtihon, mavzu testi va
+// boshqa joylardagi javoblardan ALOHIDA saqlanadi — bilet natijasiga faqat shu
+// jadvaldagi yozuvlar ta'sir qiladi.
+model TicketAnswer {
+  id               String   @id @default(cuid())
+  userId           String
+  ticketId         String
+  questionId       String
+  selectedOptionId String?
+  isCorrect        Boolean
+  answeredAt       DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticket   Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, ticketId, answeredAt])
+  @@index([userId, questionId])
+}
+
+// Mavzulashtirilgan test (/topics/[slug]) ichida berilgan javoblar.
+// Real imtihon, mavzu imtihoni, biletlar va boshqa testlardan ALOHIDA saqlanadi —
+// shu sababli kategoriya progressiga faqat shu jadval orqali kelgan javoblar
+// ta'sir qiladi. Eng oxirgi `TestResult` (categoryId bo'yicha) `completedAt`'idan
+// keyingi yozuvlar — joriy attempt.
+// Foydalanuvchi tomonidan saqlangan (bookmark qilingan) savollar.
+// Test jarayonida yulduzcha tugmasini bosgan vaqtda yoziladi, /saved sahifada
+// ko'rsatiladi va u yerda olib tashlash mumkin.
+model SavedQuestion {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String
+  savedAt    DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId, savedAt])
+}
+
+model TopicAnswer {
+  id               String   @id @default(cuid())
+  userId           String
+  categoryId       String
+  questionId       String
+  selectedOptionId String?
+  isCorrect        Boolean
+  answeredAt       DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, categoryId, answeredAt])
+  @@index([userId, questionId])
 }
 
 model RoadSign {

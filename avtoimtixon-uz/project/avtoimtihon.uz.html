@@ -23,6 +23,10 @@
 <script type="text/babel" src="components/i18n.jsx"></script>
 <script type="text/babel" src="components/RoadSign.jsx"></script>
 <script type="text/babel" src="artboards/Landing.jsx"></script>
+<script type="text/babel" src="artboards/LandingV2.jsx"></script>
+<script type="text/babel" src="artboards/LandingV3.jsx"></script>
+<script type="text/babel" src="artboards/MyProgress.jsx"></script>
+<script type="text/babel" src="artboards/MyProgressWeb.jsx"></script>
 <script type="text/babel" src="artboards/QuizEngine.jsx"></script>
 <script type="text/babel" src="artboards/Pages.jsx"></script>
 <script type="text/babel" src="artboards/Mobile.jsx"></script>
@@ -63,11 +67,17 @@ function App() {
     <>
       <DesignCanvas title="avtoimtihon.uz" subtitle="Bento Grid · Dark + neon · 2026">
         <DCSection id="web" title="Web · Desktop" subtitle="1280px artboards · all flows">
-          <DCArtboard id="landing" label="01 · Landing" width={1280} height={1640}>
-            <Landing t={strings} accent={t.accent} />
+          <DCArtboard id="landing" label="01 · Home · logged-in dashboard" width={1280} height={1640}>
+            <Landing t={strings} accent={t.accent} lang={lang} />
           </DCArtboard>
-          <DCArtboard id="catalog" label="02 · Tests Catalog" width={1280} height={1100}>
-            <Catalog t={strings} lang={lang} />
+          <DCArtboard id="landing-contact" label="01b · Home · Aloqa popup" width={1280} height={1640}>
+            <Landing t={strings} accent={t.accent} lang={lang} forceContact={true} />
+          </DCArtboard>
+          <DCArtboard id="landing-v2" label="01c · Home · Variant 2 · Clean / Minimal" width={1280} height={900}>
+            <LandingV2 t={strings} lang={lang} />
+          </DCArtboard>
+          <DCArtboard id="landing-v3" label="01d · Home · Variant 3 · Quiz-style" width={1280} height={900}>
+            <LandingV3 t={strings} lang={lang} />
           </DCArtboard>
           <DCArtboard id="quiz20" label="03 · Quiz · Real imtihon (20) · F1–F6 keyboard" width={1280} height={880}>
             <QuizEngine t={strings} lang={lang} mode="real20" />
@@ -75,8 +85,11 @@ function App() {
           <DCArtboard id="quiz50" label="03b · Quiz · Real imtihon (50)" width={1280} height={880}>
             <QuizEngine t={strings} lang={lang} mode="real50" />
           </DCArtboard>
-          <DCArtboard id="results" label="04 · Results" width={1280} height={1080}>
-            <Results t={strings} lang={lang} />
+          <DCArtboard id="results" label="04 · Results · O'tdi (18/20)" width={1280} height={1320}>
+            <Results t={strings} lang={lang} mode="passed" />
+          </DCArtboard>
+          <DCArtboard id="results-failed" label="04b · Results · O'tolmadi (12/20)" width={1280} height={1640}>
+            <Results t={strings} lang={lang} mode="failed" />
           </DCArtboard>
           <DCArtboard id="progress" label="05 · Progress" width={1280} height={1180}>
             <Progress t={strings} lang={lang} />
@@ -104,6 +117,39 @@ function App() {
           </DCArtboard>
           <DCArtboard id="adm-users" label="Admin · Foydalanuvchilar" width={1440} height={1080}>
             <AdminUsers />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="progress-system" title="My Progress · Daraja tizimi" subtitle="5 daraja · neon hexagon badge">
+          <DCArtboard id="mpw-tolibi" label="Web · Tolibi ilm (21%) · default" width={1280} height={820}>
+            <MyProgressWeb activeIdx={1} progressPct={21} />
+          </DCArtboard>
+          <DCArtboard id="mpw-mehmon" label="Web · Mehmon (6%)" width={1280} height={820}>
+            <MyProgressWeb activeIdx={0} progressPct={6} />
+          </DCArtboard>
+          <DCArtboard id="mpw-taxsir" label="Web · Taxsir (55%)" width={1280} height={820}>
+            <MyProgressWeb activeIdx={2} progressPct={55} />
+          </DCArtboard>
+          <DCArtboard id="mpw-mavlono" label="Web · Mavlono (82%)" width={1280} height={820}>
+            <MyProgressWeb activeIdx={3} progressPct={82} />
+          </DCArtboard>
+          <DCArtboard id="mpw-piri" label="Web · Piri komil (97%)" width={1280} height={820}>
+            <MyProgressWeb activeIdx={4} progressPct={97} />
+          </DCArtboard>
+          <DCArtboard id="mp-mehmon" label="Mobile · Mehmon (0–10%)" width={390} height={844}>
+            <MyProgress activeIdx={0} progressPct={6} />
+          </DCArtboard>
+          <DCArtboard id="mp-tolibi" label="Mobile · Tolibi ilm (11–40%) · default" width={390} height={844}>
+            <MyProgress activeIdx={1} progressPct={21} />
+          </DCArtboard>
+          <DCArtboard id="mp-taxsir" label="Mobile · Taxsir (41–70%)" width={390} height={844}>
+            <MyProgress activeIdx={2} progressPct={55} />
+          </DCArtboard>
+          <DCArtboard id="mp-mavlono" label="Mobile · Mavlono (71–90%)" width={390} height={844}>
+            <MyProgress activeIdx={3} progressPct={82} />
+          </DCArtboard>
+          <DCArtboard id="mp-pirikomil" label="Mobile · Piri komil (91–100%)" width={390} height={844}>
+            <MyProgress activeIdx={4} progressPct={97} />
           </DCArtboard>
         </DCSection>
 

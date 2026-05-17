@@ -19,9 +19,10 @@ type Props = {
   };
   wrongAnswers: { id: string; questionUz: string; questionRu: string; questionCy: string }[];
   categoryStats: { correct: number; total: number; nameUz: string; nameRu: string; nameCy: string }[];
+  grid: { qid: string; correct: boolean | null }[];
 };
 
-export default function ResultsClient({ result, wrongAnswers, categoryStats }: Props) {
+export default function ResultsClient({ result, wrongAnswers, categoryStats, grid }: Props) {
   const { t, lang } = useLang();
   const wrongCount = result.totalQuestions - result.correctCount;
   const correctPct = result.totalQuestions ? Math.round((result.correctCount / result.totalQuestions) * 100) : 0;
@@ -133,7 +134,7 @@ export default function ResultsClient({ result, wrongAnswers, categoryStats }: P
               <Link href={`/tests/${result.testId}`} className="btn btn--primary">
                 ↻ {t.results.retry}
               </Link>
-              <Link href="/tests" className="btn btn--ghost">
+              <Link href="/" className="btn btn--ghost">
                 {t.results.goHome} →
               </Link>
             </div>
@@ -213,9 +214,103 @@ export default function ResultsClient({ result, wrongAnswers, categoryStats }: P
         </div>
       )}
 
+      {/* 20-savol overview grid */}
+      <div className="bento" style={{ padding: 24, marginTop: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
+          <div className="overline">{grid.length} {lang === "ru" ? "ВОПРОСОВ · ОБЗОР" : "SAVOL · UMUMIY KO'RINISH"}</div>
+          <div style={{ display: "flex", gap: 14, fontSize: 11, color: "var(--fg-2)", fontFamily: "var(--font-mono)" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 3, background: "var(--success)", display: "inline-block" }} />
+              {lang === "ru" ? "ВЕРНО" : "TO'G'RI"}
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 3, background: "var(--error)", display: "inline-block" }} />
+              {lang === "ru" ? "НЕВЕРНО" : "XATO"}
+            </span>
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(20, grid.length)}, 1fr)`, gap: 6 }}>
+          {grid.map((g, i) => {
+            const wrong = g.correct === false;
+            const skip = g.correct === null;
+            return (
+              <div
+                key={i}
+                style={{
+                  aspectRatio: "1",
+                  borderRadius: 8,
+                  background: skip ? "var(--bg-3)" : wrong ? "var(--error)" : "var(--success)",
+                  color: skip ? "var(--fg-3)" : wrong ? "#fff" : "#0a1f0e",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 12,
+                  fontWeight: 700
+                }}
+              >
+                {i + 1}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Next steps — only when failed */}
+      {!result.passed && (
+        <div
+          className="bento"
+          style={{
+            padding: 24,
+            marginTop: 16,
+            background: "radial-gradient(60% 80% at 0% 0%, color-mix(in oklch, oklch(0.68 0.22 25) 12%, transparent), transparent 60%), var(--bg-1)",
+            borderColor: "color-mix(in oklch, oklch(0.68 0.22 25) 28%, var(--line))"
+          }}
+        >
+          <div className="overline" style={{ marginBottom: 14, color: "oklch(0.78 0.18 25)" }}>
+            ⚠ {lang === "ru" ? "ЧТО ДАЛЬШЕ" : "KEYINGI QADAMLAR"}
+          </div>
+          <div className="next-steps-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+            {[
+              {
+                n: "01",
+                t: lang === "ru" ? "Разберите ошибки" : "Xatolarni tahlil qiling",
+                s: lang === "ru" ? "Каждый вопрос с пояснением" : "Har bir savol tushuntirish bilan",
+                btn: lang === "ru" ? "Открыть" : "Ochish",
+                href: "/tests/mistakes"
+              },
+              {
+                n: "02",
+                t: lang === "ru" ? "Слабые темы" : "Zaif mavzularni mashq qiling",
+                s: lang === "ru" ? "Категория · Знаки · Дорожные ситуации" : "Kategoriya bo'yicha mashq",
+                btn: lang === "ru" ? "Начать" : "Boshlash",
+                href: "/tests/test-yhq"
+              },
+              {
+                n: "03",
+                t: lang === "ru" ? "Повторите экзамен" : "Imtihonni qaytarish",
+                s: lang === "ru" ? "Когда будете готовы — попробуйте снова" : "Tayyor bo'lganda qayta urinib ko'ring",
+                btn: lang === "ru" ? "↻ Пересдать" : "↻ Qaytadan",
+                href: `/tests/${result.testId}`
+              }
+            ].map((step, i) => (
+              <div key={i} style={{ padding: 18, borderRadius: 14, background: "var(--bg-2)", border: "1px solid var(--line)" }}>
+                <div className="mono" style={{ fontSize: 11, color: "var(--fg-3)", marginBottom: 8 }}>{step.n}</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>{step.t}</div>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--fg-2)", lineHeight: 1.5, marginBottom: 12 }}>{step.s}</p>
+                <Link href={step.href} className="btn btn--ghost" style={{ fontSize: 12, padding: "6px 12px" }}>
+                  {step.btn} →
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <style>{`
         @media (max-width: 900px) {
           .lg-grid { grid-template-columns: 1fr !important; }
+          .next-steps-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>

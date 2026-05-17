@@ -18,12 +18,12 @@ export default async function ProgressPage() {
       where: { userId },
       orderBy: { completedAt: "desc" },
       take: 30,
-      include: { test: true }
+      include: { test: true, category: true }
     }),
     prisma.userAnswer.findMany({
       where: { userId },
       include: { question: { include: { category: true } } },
-      take: 1000,
+      take: 2000,
       orderBy: { answeredAt: "desc" }
     })
   ]);
@@ -38,22 +38,23 @@ export default async function ProgressPage() {
     if (a.isCorrect) catStats[c.id].correct++;
   }
 
-  // 14 haftalik heatmap — har kun (Du..Yak)
+  // 14 haftalik heatmap
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const COLS = 14;
   const ROWS = 7;
-  const dow = (today.getDay() + 6) % 7; // 0=Du..6=Yak
+  const dow = (today.getDay() + 6) % 7;
   const start = new Date(today);
   start.setDate(today.getDate() - dow - (COLS - 1) * 7);
 
-  // Kunlik javob soni
   const dayCounts: Record<string, number> = {};
+  const dayCorrect: Record<string, number> = {};
   for (const a of allAnswers) {
     const d = new Date(a.answeredAt);
     d.setHours(0, 0, 0, 0);
     const k = d.toISOString().slice(0, 10);
     dayCounts[k] = (dayCounts[k] || 0) + 1;
+    if (a.isCorrect) dayCorrect[k] = (dayCorrect[k] || 0) + 1;
   }
 
   const cells: { date: string; count: number; level: number }[][] = [];
@@ -76,7 +77,7 @@ export default async function ProgressPage() {
     cells.push(col);
   }
 
-  // Streak hisoblash — bugundan teskari kunma-kun
+  // Streak
   let streak = 0;
   for (let i = 0; i < 365; i++) {
     const d = new Date(today);
@@ -86,19 +87,37 @@ export default async function ProgressPage() {
     else if (i > 0) break;
   }
 
-  // Haftalik chart (oxirgi 8 hafta)
-  const weekly = Array.from({ length: 8 }, (_, i) => {
-    const wEnd = new Date(today);
-    wEnd.setDate(today.getDate() - (7 - i) * 7);
-    const wStart = new Date(wEnd);
-    wStart.setDate(wEnd.getDate() - 7);
-    let count = 0;
-    for (const k in dayCounts) {
-      const d = new Date(k);
-      if (d >= wStart && d < wEnd) count += dayCounts[k];
-    }
-    return count;
-  });
+  // Haftalik (oxirgi 7 kun) — bar chart
+  const weekDays: { d: string; date: string; q: number; c: number; today?: boolean }[] = [];
+  const dowLabels = ["Du", "Se", "Cho", "Pa", "Ju", "Sha", "Ya"];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const k = d.toISOString().slice(0, 10);
+    const dwIdx = (d.getDay() + 6) % 7;
+    weekDays.push({
+      d: dowLabels[dwIdx],
+      date: String(d.getDate()),
+      q: dayCounts[k] || 0,
+      c: dayCorrect[k] || 0,
+      today: i === 0
+    });
+  }
+
+  // Oylik (oxirgi 30 kun) — bar chart
+  const monthDays: { d: string; date: string; q: number; c: number; today?: boolean }[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const k = d.toISOString().slice(0, 10);
+    monthDays.push({
+      d: String(d.getDate()),
+      date: String(d.getDate()),
+      q: dayCounts[k] || 0,
+      c: dayCorrect[k] || 0,
+      today: i === 0
+    });
+  }
 
   return (
     <>
@@ -113,14 +132,15 @@ export default async function ProgressPage() {
             id: r.id,
             score: r.score,
             passed: r.passed,
-            titleUz: r.test.titleUz,
-            titleRu: r.test.titleRu,
-            titleCy: r.test.titleCy,
+            titleUz: r.test?.titleUz ?? r.category?.nameUz ?? "Test",
+            titleRu: r.test?.titleRu ?? r.category?.nameRu ?? "Тест",
+            titleCy: r.test?.titleCy ?? r.category?.nameCy ?? "Тест",
             completedAt: r.completedAt.toISOString()
           }))}
           categoryStats={Object.values(catStats)}
           heatmap={cells}
-          weeklyChart={weekly}
+          weekDays={weekDays}
+          monthDays={monthDays}
           today={today.toISOString().slice(0, 10)}
         />
       </main>

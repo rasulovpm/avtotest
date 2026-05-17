@@ -53,11 +53,21 @@ export default async function MistakesPage() {
     }))
   }));
 
+  const saved = await prisma.savedQuestion.findMany({
+    where: { userId, questionId: { in: questions.map((q) => q.id) } },
+    select: { questionId: true },
+  });
+  const initialSavedIds = saved.map((s) => s.questionId);
+
   return (
     <>
       <Header />
       <main style={{ background: "var(--bg-0)" }}>
-        <MistakesClient questions={questions} totalWrongCount={wrongAnswers.length} />
+        <MistakesClient
+          questions={questions}
+          totalWrongCount={wrongAnswers.length}
+          initialSavedIds={initialSavedIds}
+        />
       </main>
       <Footer />
     </>

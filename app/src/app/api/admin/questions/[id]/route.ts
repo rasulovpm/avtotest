@@ -9,7 +9,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!body.options.some((o: any) => o.isCorrect)) {
       return NextResponse.json({ error: "no_correct_option" }, { status: 400 });
     }
-    await prisma.$transaction([
+
+    const ops: any[] = [
       prisma.option.deleteMany({ where: { questionId: params.id } }),
       prisma.question.update({
         where: { id: params.id },
@@ -35,14 +36,31 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           }
         }
       })
-    ]);
+    ];
+
+    if (Array.isArray(body.ticketIds)) {
+      ops.push(prisma.ticketQuestion.deleteMany({ where: { questionId: params.id } }));
+      if (body.ticketIds.length > 0) {
+        ops.push(
+          prisma.ticketQuestion.createMany({
+            data: (body.ticketIds as string[]).map((tid, i) => ({
+              ticketId: tid,
+              questionId: params.id,
+              orderIndex: i
+            }))
+          })
+        );
+      }
+    }
+
+    await prisma.$transaction(ops);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: "internal_error", detail: String(e?.message) }, { status: 500 });
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
     await requireAdmin();
     await prisma.question.delete({ where: { id: params.id } });

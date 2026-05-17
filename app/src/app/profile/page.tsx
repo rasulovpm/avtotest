@@ -5,6 +5,7 @@ import { getAuthSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { relativeTime } from "@/lib/utils";
+import ExamDateEditor from "./ExamDateEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export default async function ProfilePage() {
       where: { userId },
       orderBy: { completedAt: "desc" },
       take: 5,
-      include: { test: true }
+      include: { test: true, category: true }
     }),
     prisma.testResult.aggregate({
       where: { userId },
@@ -101,6 +102,9 @@ export default async function ProfilePage() {
             </div>
           </div>
 
+          {/* Exam date */}
+          <ExamDateEditor initialDate={user?.examDate?.toISOString() ?? null} />
+
           {/* Stats */}
           <div className="profile-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 16 }}>
             <div className="bento" style={{ padding: 22 }}>
@@ -141,7 +145,7 @@ export default async function ProfilePage() {
               {recent.map((r, i) => (
                 <Link
                   key={r.id}
-                  href={`/results/${r.id}`}
+                  href={r.testId ? `/results/${r.id}` : r.category ? `/topics/${r.category.slug}` : "#"}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -172,7 +176,7 @@ export default async function ProfilePage() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 13, fontWeight: 500, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {r.test.titleUz}
+                      {r.test?.titleUz ?? r.category?.nameUz ?? "Test"}
                     </p>
                     <p style={{ fontSize: 11, color: "var(--fg-3)", margin: 0, fontFamily: "var(--font-mono)" }}>
                       {relativeTime(r.completedAt)}

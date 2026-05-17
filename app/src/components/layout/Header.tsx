@@ -3,14 +3,14 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { useLang } from "@/components/lang-provider";
-import { LANGS, type Lang } from "@/lib/i18n";
 import { Logo } from "@/components/layout/Logo";
+import { LangSwitch } from "@/components/LangSwitch";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Header() {
   const { data: session } = useSession();
-  const { t, lang, setLang } = useLang();
+  const { t, lang } = useLang();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [langOpen, setLangOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
@@ -22,26 +22,39 @@ export default function Header() {
   }, [drawerOpen]);
 
   const links: { href: string; label: string }[] = [
-    { href: "/tests", label: t.nav.tests },
+    { href: "/", label: lang === "ru" ? "Главная" : lang === "cy" ? "Бош саҳифа" : "Bosh sahifa" },
     { href: "/signs", label: t.nav.signs },
     { href: "/progress", label: t.nav.progress },
     { href: "/pricing", label: t.nav.pricing }
   ];
 
+  const userPlan = (session?.user as any)?.plan as string | undefined;
+  const planExpiresAt = (session?.user as any)?.planExpiresAt as string | null | undefined;
+  const isPro = userPlan && userPlan !== "FREE";
+  const daysLeft = planExpiresAt
+    ? Math.max(0, Math.ceil((new Date(planExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
+
   return (
     <>
       <header
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "16px 24px",
           borderBottom: "1px solid var(--line)",
           background: "color-mix(in oklch, var(--bg-0) 70%, transparent)",
           backdropFilter: "blur(16px)",
           position: "sticky",
           top: 0,
-          zIndex: 30,
+          zIndex: 30
+        }}
+      >
+      <div
+        className="shell"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingTop: 16,
+          paddingBottom: 16,
           gap: 12
         }}
       >
@@ -60,77 +73,77 @@ export default function Header() {
           </nav>
         </div>
 
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {/* Lang switcher (always visible on desktop, hidden on mobile when drawer is closed) */}
-          <div style={{ position: "relative" }} className="hide-on-mobile-sm">
-            <button
-              onClick={() => setLangOpen((v) => !v)}
-              className="chip"
-              style={{ cursor: "pointer", textTransform: "uppercase" }}
-            >
-              ◐ {lang}
-            </button>
-            {langOpen && (
-              <div style={dropMenuSt}>
-                {LANGS.map((l) => (
-                  <button
-                    key={l.code}
-                    onClick={() => {
-                      setLang(l.code as Lang);
-                      setLangOpen(false);
-                    }}
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "8px 12px",
-                      background: lang === l.code ? "var(--bg-2)" : "transparent",
-                      color: lang === l.code ? "var(--accent)" : "var(--fg-0)",
-                      border: "none",
-                      borderRadius: 8,
-                      cursor: "pointer",
-                      fontSize: 13
-                    }}
-                  >
-                    {l.flag} {l.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <span className="hide-on-mobile-sm">
+            <LangSwitch />
+          </span>
+          <span className="hide-on-mobile-sm">
+            <ThemeToggle />
+          </span>
 
           {session ? (
-            <div style={{ position: "relative" }} className="hide-on-mobile-sm">
-              <button onClick={() => setProfileOpen((v) => !v)} className="chip" style={{ cursor: "pointer", padding: "6px 12px" }}>
-                <span style={avatarSt}>
-                  {(session.user?.name || (session.user as any)?.phone || "?").charAt(0).toUpperCase()}
+            <>
+              {isPro && (
+                <span className="chip chip--lime hide-on-mobile-sm" style={{ fontSize: 11, padding: "5px 10px" }}>
+                  ● {userPlan} {daysLeft !== null ? `· ${daysLeft} ${lang === "ru" ? "дн" : "kun"}` : ""}
                 </span>
-                <span style={{ fontSize: 12 }}>
-                  {(session.user?.name || (session.user as any)?.phone || "").slice(0, 14)}
-                </span>
-              </button>
-              {profileOpen && (
-                <div style={dropMenuSt}>
-                  <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--line)" }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>{session.user?.name || "Foydalanuvchi"}</p>
-                    <p style={{ fontSize: 11, color: "var(--fg-2)", margin: 0, fontFamily: "var(--font-mono)" }}>
-                      {(session.user as any)?.phone}
-                    </p>
-                  </div>
-                  <Link href="/profile" style={dropItem}>◉ {t.common.profile}</Link>
-                  <Link href="/progress" style={dropItem}>↗ {t.nav.progress}</Link>
-                  {(session.user as any)?.role === "ADMIN" && (
-                    <Link href="/admin" style={{ ...dropItem, color: "var(--accent)" }}>⚙ Admin panel</Link>
-                  )}
-                  <button
-                    onClick={() => signOut({ callbackUrl: "/" })}
-                    style={{ ...dropItem, color: "var(--error)", border: "none", background: "transparent", width: "100%", textAlign: "left", cursor: "pointer" }}
-                  >
-                    ↪ {t.common.logout}
-                  </button>
-                </div>
               )}
-            </div>
+              <div style={{ position: "relative" }}>
+                <button
+                  onClick={() => setProfileOpen((v) => !v)}
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, var(--accent), var(--accent-2))",
+                    color: "#0a1f24",
+                    fontWeight: 700,
+                    fontSize: 14,
+                    fontFamily: "var(--font-mono)",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 0 0 2px var(--bg-0), 0 0 0 3px var(--line-2)"
+                  }}
+                >
+                  {(session.user?.name || (session.user as any)?.phone || "?").charAt(0).toUpperCase()}
+                </button>
+                {profileOpen && (
+                  <div style={dropMenuSt}>
+                    <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--line)" }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>{session.user?.name || "Foydalanuvchi"}</p>
+                      <p style={{ fontSize: 11, color: "var(--fg-2)", margin: 0, fontFamily: "var(--font-mono)" }}>
+                        {(session.user as any)?.phone}
+                      </p>
+                    </div>
+                    <Link href="/profile" style={dropItem} onClick={() => setProfileOpen(false)}>◉ {t.common.profile}</Link>
+                    <Link href="/progress" style={dropItem} onClick={() => setProfileOpen(false)}>↗ {t.nav.progress}</Link>
+                    <Link href="/pricing" style={dropItem} onClick={() => setProfileOpen(false)}>★ {t.nav.pricing}</Link>
+                    {(session.user as any)?.role === "ADMIN" && (
+                      <Link href="/admin" style={{ ...dropItem, color: "var(--accent)" }} onClick={() => setProfileOpen(false)}>
+                        ⚙ Admin panel
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => signOut({ callbackUrl: "/" })}
+                      style={{
+                        ...dropItem,
+                        color: "var(--error)",
+                        border: "none",
+                        background: "transparent",
+                        width: "100%",
+                        textAlign: "left",
+                        cursor: "pointer"
+                      }}
+                    >
+                      ↪ {t.common.logout}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
             <div className="hide-on-mobile-sm" style={{ display: "flex", gap: 8 }}>
               <Link href="/auth/register" className="btn btn--ghost" style={{ fontSize: 14, padding: "8px 14px" }}>
@@ -161,6 +174,7 @@ export default function Header() {
             ☰
           </button>
         </div>
+      </div>
       </header>
 
       {/* Mobile drawer */}
@@ -212,7 +226,21 @@ export default function Header() {
             {session && (
               <div className="bento" style={{ padding: 14, marginBottom: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ ...avatarSt, width: 36, height: 36, fontSize: 14 }}>
+                  <span
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "50%",
+                      background: "linear-gradient(135deg, var(--accent), var(--accent-2))",
+                      color: "#0a1f24",
+                      fontWeight: 700,
+                      fontSize: 14,
+                      fontFamily: "var(--font-mono)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}
+                  >
                     {(session.user?.name || (session.user as any)?.phone || "?").charAt(0).toUpperCase()}
                   </span>
                   <div>
@@ -222,6 +250,11 @@ export default function Header() {
                     </p>
                   </div>
                 </div>
+                {isPro && (
+                  <span className="chip chip--lime" style={{ fontSize: 11, marginTop: 10, display: "inline-flex" }}>
+                    ● {userPlan} · {daysLeft} {lang === "ru" ? "дн" : "kun"}
+                  </span>
+                )}
               </div>
             )}
 
@@ -246,23 +279,10 @@ export default function Header() {
               </Link>
             ))}
 
-            <div className="overline" style={{ marginTop: 16 }}>TIL</div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {LANGS.map((l) => (
-                <button
-                  key={l.code}
-                  onClick={() => setLang(l.code as Lang)}
-                  className="chip"
-                  style={{
-                    cursor: "pointer",
-                    background: lang === l.code ? "var(--accent)" : "var(--bg-2)",
-                    color: lang === l.code ? "#0a1f24" : "var(--fg-1)",
-                    borderColor: lang === l.code ? "var(--accent)" : "var(--line)"
-                  }}
-                >
-                  {l.flag} {l.label}
-                </button>
-              ))}
+            <div className="overline" style={{ marginTop: 16 }}>SOZLAMALAR</div>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <LangSwitch />
+              <ThemeToggle />
             </div>
 
             <div style={{ marginTop: "auto", paddingTop: 16, borderTop: "1px solid var(--line)" }}>
@@ -321,9 +341,9 @@ const dropMenuSt: React.CSSProperties = {
   border: "1px solid var(--line-2)",
   borderRadius: 12,
   padding: 4,
-  minWidth: 200,
+  minWidth: 220,
   zIndex: 50,
-  boxShadow: "var(--shadow-card)"
+  boxShadow: "0 12px 32px rgba(0,0,0,0.4)"
 };
 
 const dropItem: React.CSSProperties = {
@@ -334,18 +354,4 @@ const dropItem: React.CSSProperties = {
   textDecoration: "none",
   borderRadius: 8,
   fontFamily: "var(--font-body)"
-};
-
-const avatarSt: React.CSSProperties = {
-  width: 22,
-  height: 22,
-  borderRadius: "50%",
-  background: "linear-gradient(135deg, var(--accent), var(--accent-2))",
-  color: "#0a1f24",
-  fontWeight: 700,
-  fontSize: 11,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontFamily: "var(--font-mono)"
 };

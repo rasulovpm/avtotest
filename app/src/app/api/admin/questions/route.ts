@@ -12,8 +12,15 @@ export async function POST(req: NextRequest) {
     if (!body.options.some((o: any) => o.isCorrect)) {
       return NextResponse.json({ error: "no_correct_option" }, { status: 400 });
     }
+
+    const max = await prisma.question.aggregate({ _max: { number: true } });
+    const next = (max._max.number || 0) + 1;
+
+    const ticketIds: string[] = Array.isArray(body.ticketIds) ? body.ticketIds : [];
+
     const q = await prisma.question.create({
       data: {
+        number: next,
         categoryId: body.categoryId || null,
         textUz: body.textUz,
         textRu: body.textRu || body.textUz,
@@ -32,10 +39,18 @@ export async function POST(req: NextRequest) {
             isCorrect: !!o.isCorrect,
             orderIndex: i
           }))
-        }
+        },
+        tickets: ticketIds.length
+          ? {
+              create: ticketIds.map((tid, i) => ({
+                ticketId: tid,
+                orderIndex: i
+              }))
+            }
+          : undefined
       }
     });
-    return NextResponse.json({ id: q.id });
+    return NextResponse.json({ id: q.id, number: q.number });
   } catch (e: any) {
     if (String(e?.message).includes("FORBIDDEN")) return NextResponse.json({ error: "forbidden" }, { status: 403 });
     if (String(e?.message).includes("UNAUTH")) return NextResponse.json({ error: "unauth" }, { status: 401 });

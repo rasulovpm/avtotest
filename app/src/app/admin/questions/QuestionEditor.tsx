@@ -4,8 +4,10 @@ import { useRouter } from "next/navigation";
 import { RoadSignSvg } from "@/components/RoadSignSvg";
 
 type Cat = { id: string; nameUz: string; slug: string };
+type TicketOpt = { id: string; number: number; titleUz: string };
 type Initial = {
   id: string;
+  number?: number;
   categoryId: string | null;
   textUz: string;
   textRu: string;
@@ -17,9 +19,18 @@ type Initial = {
   difficulty: string;
   isPublished: boolean;
   options: { id?: string; textUz: string; textRu: string; textCy: string; isCorrect: boolean }[];
+  ticketIds?: string[];
 };
 
-export default function QuestionEditor({ categories, initial }: { categories: Cat[]; initial?: Initial }) {
+export default function QuestionEditor({
+  categories,
+  tickets = [],
+  initial
+}: {
+  categories: Cat[];
+  tickets?: TicketOpt[];
+  initial?: Initial;
+}) {
   const router = useRouter();
   const [tab, setTab] = useState<"uz" | "cy" | "ru">("uz");
   const [data, setData] = useState({
@@ -37,7 +48,31 @@ export default function QuestionEditor({ categories, initial }: { categories: Ca
       initial?.options ||
       [0, 1, 2, 3].map(() => ({ textUz: "", textRu: "", textCy: "", isCorrect: false }))
   });
+  const [ticketIds, setTicketIds] = useState<string[]>(initial?.ticketIds || []);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const toggleTicket = (id: string) => {
+    setTicketIds((arr) => (arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]));
+  };
+
+  const onPickFile = async (file: File | null | undefined) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const r = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      if (!r.ok) {
+        const e = await r.json().catch(() => ({}));
+        alert(`Yuklashda xatolik: ${e.error || r.status}`);
+        return;
+      }
+      const { url } = await r.json();
+      setData((d) => ({ ...d, imageUrl: url }));
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const updateOption = (i: number, patch: Partial<typeof data.options[0]>) => {
     setData((d) => ({ ...d, options: d.options.map((o, idx) => (idx === i ? { ...o, ...patch } : o)) }));
@@ -69,7 +104,7 @@ export default function QuestionEditor({ categories, initial }: { categories: Ca
       const res = await fetch(url, {
         method,
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ ...data, ticketIds })
       });
       if (res.ok) router.push("/admin/questions");
       else {
@@ -240,8 +275,8 @@ export default function QuestionEditor({ categories, initial }: { categories: Ca
       {/* Sidebar — meta */}
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div className="bento" style={{ padding: 22 }}>
-          <div className="overline" style={{ marginBottom: 14 }}>RASM URL (ixtiyoriy)</div>
-          <div
+          <div className="overline" style={{ marginBottom: 14 }}>RASM (ixtiyoriy)</div>
+          <label
             style={{
               aspectRatio: "1",
               background: "var(--bg-2)",
@@ -250,19 +285,62 @@ export default function QuestionEditor({ categories, initial }: { categories: Ca
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              marginBottom: 10
+              marginBottom: 10,
+              cursor: uploading ? "wait" : "pointer",
+              position: "relative",
+              overflow: "hidden"
             }}
+            title="Bosib rasm tanlang"
           >
             {data.imageUrl ? (
               <img src={data.imageUrl} alt="" style={{ maxWidth: "80%", maxHeight: "80%", objectFit: "contain" }} />
             ) : (
-              <RoadSignSvg kind="priority-main" size={120} />
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, color: "var(--fg-3)" }}>
+                <RoadSignSvg kind="priority-main" size={90} />
+                <span style={{ fontSize: 11, fontFamily: "var(--font-mono)" }}>↑ rasm yuklash</span>
+              </div>
+            )}
+            {uploading && (
+              <div style={{ position: "absolute", inset: 0, background: "color-mix(in oklch, var(--bg-0) 60%, transparent)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", fontSize: 12, fontFamily: "var(--font-mono)" }}>
+                Yuklanmoqda…
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+              onChange={(e) => onPickFile(e.target.files?.[0])}
+              style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
+            />
+          </label>
+          <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+            <label
+              className="btn btn--ghost"
+              style={{ flex: 1, fontSize: 11, padding: "6px 10px", justifyContent: "center", cursor: uploading ? "wait" : "pointer" }}
+            >
+              {uploading ? "Yuklanmoqda…" : "📁 Fayl tanlash"}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                onChange={(e) => onPickFile(e.target.files?.[0])}
+                style={{ display: "none" }}
+              />
+            </label>
+            {data.imageUrl && (
+              <button
+                type="button"
+                onClick={() => setData({ ...data, imageUrl: "" })}
+                className="btn btn--ghost"
+                style={{ fontSize: 11, padding: "6px 10px", color: "var(--error)" }}
+                title="Olib tashlash"
+              >
+                ✕
+              </button>
             )}
           </div>
           <input
             value={data.imageUrl}
             onChange={(e) => setData({ ...data, imageUrl: e.target.value })}
-            placeholder="https://..."
+            placeholder="yoki URL kiriting (ixtiyoriy)"
             style={{
               width: "100%",
               boxSizing: "border-box",
@@ -270,7 +348,7 @@ export default function QuestionEditor({ categories, initial }: { categories: Ca
               border: "1px solid var(--line)",
               borderRadius: 8,
               padding: "8px 12px",
-              fontSize: 12,
+              fontSize: 11,
               color: "var(--fg-0)",
               fontFamily: "var(--font-mono)",
               outline: "none"
@@ -306,6 +384,38 @@ export default function QuestionEditor({ categories, initial }: { categories: Ca
             ]}
           />
         </div>
+
+        {tickets.length > 0 && (
+          <div className="bento" style={{ padding: 22 }}>
+            <div className="overline" style={{ marginBottom: 12 }}>BILETLAR ({ticketIds.length})</div>
+            <div style={{ maxHeight: 220, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+              {tickets.map((tk) => {
+                const sel = ticketIds.includes(tk.id);
+                return (
+                  <label
+                    key={tk.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "7px 9px",
+                      borderRadius: 8,
+                      cursor: "pointer",
+                      background: sel ? "color-mix(in oklch, var(--accent) 12%, transparent)" : "transparent",
+                      border: "1px solid " + (sel ? "color-mix(in oklch, var(--accent) 40%, var(--line))" : "var(--line)")
+                    }}
+                  >
+                    <input type="checkbox" checked={sel} onChange={() => toggleTicket(tk.id)} style={{ accentColor: "var(--accent)" }} />
+                    <span className="mono" style={{ fontSize: 11, color: "var(--fg-2)", minWidth: 36 }}>#{tk.number}</span>
+                    <span style={{ fontSize: 12, color: "var(--fg-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {tk.titleUz}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <button onClick={save} disabled={saving} className="btn btn--primary" style={{ width: "100%", justifyContent: "center" }}>

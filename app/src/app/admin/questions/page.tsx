@@ -5,7 +5,7 @@ import QuestionsTable from "./QuestionsTable";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminQuestionsPage({ searchParams }: { searchParams: { q?: string; cat?: string } }) {
+export default async function AdminQuestionsPage({ searchParams }: { searchParams: { q?: string; cat?: string; page?: string; size?: string } }) {
   const where: any = {};
   if (searchParams.cat) where.categoryId = searchParams.cat;
   if (searchParams.q) {
@@ -15,22 +15,34 @@ export default async function AdminQuestionsPage({ searchParams }: { searchParam
     ];
   }
 
-  const [questions, categories, totals] = await Promise.all([
+  const pageSize = Math.min(Math.max(parseInt(searchParams.size || "100", 10) || 100, 10), 500);
+  const page = Math.max(parseInt(searchParams.page || "1", 10) || 1, 1);
+  const skip = (page - 1) * pageSize;
+
+  const [questions, categories, totals, filteredCount] = await Promise.all([
     prisma.question.findMany({
       where,
-      include: { category: true, options: true, _count: { select: { answers: true } } },
-      orderBy: { createdAt: "desc" },
-      take: 100
+      include: {
+        category: true,
+        options: true,
+        tickets: { include: { ticket: true } },
+        _count: { select: { answers: true } }
+      },
+      orderBy: { number: "asc" },
+      skip,
+      take: pageSize
     }),
-    prisma.category.findMany({ orderBy: { orderIndex: "asc" } }),
-    prisma.question.count()
+    prisma.category.findMany({ orderBy: { number: "asc" } }),
+    prisma.question.count(),
+    prisma.question.count({ where })
   ]);
+  const totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
 
   return (
     <>
       <AdminTopBar
         title="Savollar bazasi"
-        sub={`${totals} ta savol · ${categories.length} kategoriya · 3 til`}
+        sub={`${totals} ta savol · ${categories.length} mavzu · 3 til`}
         breadcrumbs={[{ label: "Boshqaruv" }, { label: "Savollar" }]}
         actions={
           <Link href="/admin/questions/new" className="btn btn--primary" style={{ fontSize: 13, padding: "9px 14px" }}>
@@ -42,6 +54,7 @@ export default async function AdminQuestionsPage({ searchParams }: { searchParam
         <QuestionsTable
           questions={questions.map((q) => ({
             id: q.id,
+            number: q.number,
             textUz: q.textUz,
             textRu: q.textRu,
             categoryName: q.category?.nameUz || "—",
@@ -51,12 +64,17 @@ export default async function AdminQuestionsPage({ searchParams }: { searchParam
             optionCount: q.options.length,
             correctCount: q.options.filter((o) => o.isCorrect).length,
             answerCount: q._count.answers,
+            tickets: q.tickets.map((t) => ({ id: t.ticketId, number: t.ticket.number })),
             createdAt: q.createdAt.toISOString()
           }))}
           categories={categories}
           currentCat={searchParams.cat || ""}
           currentQ={searchParams.q || ""}
           totalCount={totals}
+          filteredCount={filteredCount}
+          currentPage={page}
+          pageSize={pageSize}
+          totalPages={totalPages}
         />
       </div>
     </>
